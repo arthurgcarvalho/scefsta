@@ -6,23 +6,23 @@
     "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
     "explorer": "https://sepolia.etherscan.io",
     "deployer": "0xbdB61Ada027eF27ef0709D3848Db1Dd13c96F970",
-    "deployedAt": "2026-11-10T04:41:24.883Z",
-    "accountsAddress": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
-    "auctionsAddress": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c",
+    "deployedAt": "2026-11-10T14:26:27.688Z",
+    "accountsAddress": "0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1",
+    "auctionsAddress": "0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A",
     "transactions": {
       "accounts": {
-        "address": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
-        "txHash": "0xcbce41ba11ca2243dc455fce534df7d585e3fc1e72a12af313b42cda0ce8726b",
-        "blockNumber": 12102333,
+        "address": "0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1",
+        "txHash": "0x3388fb86a1cc80f4cf2793536ee200b80b8409abc7b1d7c56cfe33a186a55ed9",
+        "blockNumber": 12105211,
         "gasUsed": "13232067",
-        "feePaid": "0.000000001071797427"
+        "feePaid": "0.000000000873316422"
       },
       "auctions": {
-        "address": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c",
-        "txHash": "0x19004073d8444465f478665aa744a91bb76a24fad0444bd6f4f5d87987300d30",
-        "blockNumber": 12102335,
+        "address": "0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A",
+        "txHash": "0x1b731f7671610621855cd1e2fe7fd63058eee4bd9d4fcb9254e9be2b6eb05389",
+        "blockNumber": 12105213,
         "gasUsed": "28656205",
-        "feePaid": "0.000000002321152605"
+        "feePaid": "0.00000000189130953"
       }
     },
     "previous": [
@@ -30,6 +30,11 @@
         "deployedAt": "2026-11-10T02:50:38.796Z",
         "accountsAddress": "0x4f34d6779619D2746184F032Bc65FfC2A25dB1E4",
         "auctionsAddress": "0x177e5Dd67287C68F331d6EdCE59F326b7043a498"
+      },
+      {
+        "deployedAt": "2026-11-10T04:41:24.883Z",
+        "accountsAddress": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
+        "auctionsAddress": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c"
       }
     ]
   },

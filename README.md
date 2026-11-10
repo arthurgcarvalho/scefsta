@@ -40,6 +40,8 @@ This project has 6 main directories that encompass the entire codebase.
 # Running on public testnets
 The [testnet](testnet/README.md) directory has scripts to deploy the smart contracts to Ethereum Sepolia, Polygon Amoy and Avalanche Fuji, to check them end to end, and to run the web app and backend API on a single machine against those deployments (no university server, MySQL or local chain needed). The deployed addresses are recorded in [testnet/deployments.json](testnet/deployments.json).
 
+To host the app online (Google Cloud Run, Sepolia), see [cloudrun/README.md](cloudrun/README.md).
+
 # Installation
 The following instructions show how to set up and deploy this project
 

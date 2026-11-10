@@ -1,0 +1,20 @@
+# What "gcloud run deploy --source ." uploads for the container build.
+# Only the web app, the backend API, the deployed-contract addresses and the
+# start script are needed. testnet/accounts.json must never be uploaded.
+.git
+.gitignore
+.claude
+.DS_Store
+README_docs
+plots
+database-files
+foundry
+truffle
+node_modules
+**/node_modules
+project_code/.next
+project_code/.env.local
+backend-api/.env
+backend-api/data
+testnet/*
+!testnet/deployments.json

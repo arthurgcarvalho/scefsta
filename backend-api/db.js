@@ -52,7 +52,7 @@ function seedSuperAdmin(db) {
   db.prepare(
     `INSERT OR IGNORE INTO Users
        (walletId, firstName, lastName, email, address, city, state, zipcode, accountType)
-     VALUES (?, 'Super', 'Admin', 'superadmin@example.com', '800 E High St', 'Oxford', 'Ohio', 45056, 'admin')`
+     VALUES (?, 'Super', 'Admin', 'superadmin@example.com', '1 Example St', 'Sampletown', 'Nevada', 10001, 'admin')`
   ).run(deployment.deployer);
 }
 
@@ -60,12 +60,36 @@ class SqliteConnection {
   constructor(file) {
     this.file = file;
     this.db = null;
+    // SQLITE_BACKUP_DIR: a directory that outlives the process (on Cloud Run,
+    // a mounted storage bucket). The database itself stays on local disk; it
+    // is restored from the copy there at start-up and copied back after every
+    // change. Only one server instance may use the same directory.
+    this.backupFile = process.env.SQLITE_BACKUP_DIR
+      ? path.join(process.env.SQLITE_BACKUP_DIR, path.basename(file))
+      : null;
+  }
+
+  backup() {
+    if (!this.backupFile) return;
+    try {
+      fs.copyFileSync(this.file, this.backupFile);
+    } catch (error) {
+      console.error(`Could not copy the database to ${this.backupFile}:`, error);
+    }
   }
 
   connect(callback) {
     try {
       const { DatabaseSync } = require("node:sqlite");
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
+      if (
+        this.backupFile &&
+        !fs.existsSync(this.file) &&
+        fs.existsSync(this.backupFile)
+      ) {
+        fs.copyFileSync(this.backupFile, this.file);
+        console.log(`Restored the database from ${this.backupFile}`);
+      }
       const isNew = !fs.existsSync(this.file);
       this.db = new DatabaseSync(this.file);
       this.db.exec("PRAGMA foreign_keys = ON;");
@@ -74,6 +98,7 @@ class SqliteConnection {
           fs.readFileSync(path.join(__dirname, "sqlite-schema.sql"), "utf8")
         );
         seedSuperAdmin(this.db);
+        this.backup();
       }
       console.log(`Using SQLite database ${this.file}`);
       callback(null);
@@ -89,6 +114,7 @@ class SqliteConnection {
       return statement.all().map((row) => ({ ...row }));
     }
     const info = statement.run();
+    this.backup();
     return {
       affectedRows: Number(info.changes),
       insertId: Number(info.lastInsertRowid),
@@ -119,4 +145,4 @@ function createConnection() {
   return new SqliteConnection(sqliteFile());
 }
 
-module.exports = { createConnection, sqliteFile };
+module.exports = { createConnection, sqliteFile, currentDeployment };

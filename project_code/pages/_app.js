@@ -56,6 +56,10 @@ if (
   installDevWallet({
     chainId: CHAIN_ID,
     rpcUrl: DEPLOYMENT.rpcUrl,
+    // the backend API holds the test keys and signs (backend-api/devWallet.js)
+    signerUrl:
+      (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001") +
+      "/api/dev-wallet/send",
     networkLabel: NETWORK_LABEL,
     accounts: parseDevAccounts(process.env.NEXT_PUBLIC_DEV_WALLET_ACCOUNTS),
   });

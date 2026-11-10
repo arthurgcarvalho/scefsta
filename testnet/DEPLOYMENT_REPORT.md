@@ -8,8 +8,8 @@ second deployment, with those fixed, is the current one.
 
 | Network | Contract | Address |
 | --- | --- | --- |
-| Ethereum Sepolia | Accounts | [`0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc`](https://sepolia.etherscan.io/address/0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc) |
-| Ethereum Sepolia | Auctions | [`0x38274122442B8bb4d9F685C8cDD9F239f7F7032c`](https://sepolia.etherscan.io/address/0x38274122442B8bb4d9F685C8cDD9F239f7F7032c) |
+| Ethereum Sepolia | Accounts | [`0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1`](https://sepolia.etherscan.io/address/0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1) |
+| Ethereum Sepolia | Auctions | [`0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A`](https://sepolia.etherscan.io/address/0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A) |
 | Polygon Amoy | Accounts | [`0x000e505402B9EB8a041746bDd8fFFe9E72cA466e`](https://amoy.polygonscan.com/address/0x000e505402B9EB8a041746bDd8fFFe9E72cA466e) |
 | Polygon Amoy | Auctions | [`0xa7b7d18Aa90e5135a21eF12E0e5389106490b202`](https://amoy.polygonscan.com/address/0xa7b7d18Aa90e5135a21eF12E0e5389106490b202) |
 | Avalanche Fuji | Accounts | [`0xcf2e105F63275756d9dBB0c8183e113aEA18101E`](https://testnet.snowtrace.io/address/0xcf2e105F63275756d9dBB0c8183e113aEA18101E) |
@@ -18,6 +18,14 @@ second deployment, with those fixed, is the current one.
 Source: `truffle/contracts/Accounts.sol` and `Auctions.sol`, compiled with solc
 0.8.21 (optimizer off). `deployments.json` has the transaction hashes, block
 numbers and, under `previous`, the superseded addresses.
+
+The Sepolia contracts were deployed a third time on 10 November (same fixed
+source) to start from an empty tender list: tender addresses are stored on
+chain, and the earlier test tenders used real place names. The test data there
+is now made up at random (`sample-data.js`). The gas and test figures below
+for Sepolia come from the second deployment, which it replaced:
+`0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc` (Accounts) and
+`0x38274122442B8bb4d9F685C8cDD9F239f7F7032c` (Auctions).
 
 Superseded first deployment (original, unfixed source — do not use):
 
@@ -138,6 +146,45 @@ verifyDelivery 0.0041, and 0.18 POL for the two deployments.
 
 These are whole-transaction gas figures from the receipts. The same call costs
 different amounts on the three testnets, Sepolia most of all.
+
+## Hosted copy on Google Cloud Run (Sepolia, dev wallet)
+
+Deployed on 10 November 2026 with `node cloudrun/deploy.js` (see
+[`../cloudrun/README.md`](../cloudrun/README.md)): project `apps-489516`,
+region `us-central1`, service `scefsta`,
+https://scefsta-993855254741.us-central1.run.app. One container runs the web
+app and the backend API; the database is copied to the bucket
+`apps-489516-scefsta-data` after every change.
+
+The test accounts' private keys are kept in Secret Manager and used only by
+the backend API, which signs the dev wallet's transactions; the page receives
+the addresses only. (The first hosted build still had the keys in the page; it
+was never public and was replaced the same day.)
+
+The service is deployed with **sign-in required** (not public). With the dev
+wallet, anyone who can open the app can act as the test accounts, so opening
+it to everyone is left as an explicit step (the README gives the command).
+
+Checked on the deployed service: an anonymous request is refused (403); signed
+in, the landing page and the API answer; a write through the API refreshed the
+database copy in the bucket; the container restored the database from the
+bucket at start-up; in a browser (through `gcloud run services proxy`) the
+transport1 and initiator accounts log in with the dev wallet and the initiator
+dashboard lists the eight Sepolia tenders. After the keys moved to the
+backend: none of the 39 pages and scripts the service serves contains a
+private key; two transactions sent from the hosted page as superAdmin (add,
+then remove, a dummy provider address) were signed by the backend and mined on
+Sepolia; a request to send to another address was refused. The tender forms
+themselves were not driven on the hosted copy.
+
+For anonymity, the hosted copy has no developer credits on the About page and
+no footer on the landing page, and it runs against the third Sepolia
+deployment, whose tenders and test users are made up at random. The page's
+scripts list only that deployment (no other networks or earlier addresses).
+
+The hosted copy has its own database. It and the local Sepolia setup use the
+same contracts, so a tender posted from one has no patient record in the
+other; use one of them for Sepolia from here on.
 
 ## Other changes to the application code
 

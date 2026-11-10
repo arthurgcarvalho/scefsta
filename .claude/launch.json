@@ -4,14 +4,28 @@
     {
       "name": "scefsta-backend",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["testnet/run.js", "backend"],
+      "runtimeArgs": [
+        "testnet/run.js",
+        "backend"
+      ],
       "port": 5001
     },
     {
       "name": "scefsta-frontend",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["testnet/run.js", "frontend"],
+      "runtimeArgs": [
+        "testnet/run.js",
+        "frontend"
+      ],
       "port": 3000
+    },
+    {
+      "name": "scefsta-hosted-build",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "cloudrun/start.js"
+      ],
+      "port": 8080
     }
   ]
 }

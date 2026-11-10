@@ -30,6 +30,7 @@ const { getNetwork } = require("./networks");
 const { loadAccounts } = require("./accounts");
 const { compile } = require("./compile");
 const { syncDatabase } = require("./sync-db");
+const { randomAddress, randomSeverity } = require("./sample-data");
 
 const MAX_BID = 100000n; // wei placed in escrow by the hirer
 const PENALTY = 500n; // wei deposited with each bid
@@ -200,20 +201,31 @@ async function main() {
 
   console.log("\n2. Transportation hirer posts four tenders (payment held in escrow)");
   const firstId = (await auctions.getAllTenders()).length;
+  // each tender gets a made-up pickup address; the street lines must differ,
+  // because the new tenders are told apart by them below
+  const places = [];
+  while (places.length < 4) {
+    const place = randomAddress();
+    if (!places.some((other) => other.address === place.address)) places.push(place);
+  }
   const specs = {
-    A: ["110 N Poplar St", 1800],
-    B: ["501 E High St", SHORT_DELIVERY],
-    C: ["5 W Collins St", 1800],
-    D: ["24 S Beech St", SHORT_DELIVERY],
+    A: [places[0], 1800],
+    B: [places[1], SHORT_DELIVERY],
+    C: [places[2], 1800],
+    D: [places[3], SHORT_DELIVERY],
   };
   // posted together so that all four auctions close at (nearly) the same time
   await Promise.all(
-    Object.entries(specs).map(([name, [street, deliveryTime]]) =>
+    Object.entries(specs).map(([name, [place, deliveryTime]]) =>
       send(
         `post tender ${name}`,
         auctions.connect(initiator),
         "postTender",
-        [auctionTime, deliveryTime, street, "Oxford", "Ohio", "45056", PENALTY, "Low", [address("facility")]],
+        [
+          auctionTime, deliveryTime,
+          place.address, place.city, place.state, place.zipcode,
+          PENALTY, randomSeverity(), [address("facility")],
+        ],
         { value: MAX_BID }
       )
     )
@@ -222,8 +234,8 @@ async function main() {
   let tenders;
   for (let attempt = 0; attempt < 10; attempt++) {
     tenders = await auctions.getAllTenders();
-    for (const [name, [street]] of Object.entries(specs)) {
-      id[name] = tenders.findIndex((t, index) => index >= firstId && t.details.addr === street);
+    for (const [name, [place]] of Object.entries(specs)) {
+      id[name] = tenders.findIndex((t, index) => index >= firstId && t.details.addr === place.address);
     }
     if (Object.values(id).every((tenderId) => tenderId >= 0)) break;
     await sleep(3000);

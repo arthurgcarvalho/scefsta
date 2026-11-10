@@ -44,6 +44,9 @@ const { addSalt, getSalts, deleteSalt } = require("./api/salts");
 
 const { getUser } = require("./api/users");
 
+// Signs for the test accounts when DEV_WALLET_KEYS is set (see devWallet.js)
+require("./devWallet").registerDevWallet(app);
+
 // Database connection configuration (local SQLite by default, or the original
 // MySQL server with DB_DRIVER=mysql; see db.js)
 const connection = createConnection();

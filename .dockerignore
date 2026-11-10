@@ -1,0 +1,7 @@
+.git
+**/node_modules
+project_code/.next
+project_code/.env.local
+backend-api/.env
+backend-api/data
+testnet/accounts.json

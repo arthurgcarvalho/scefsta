@@ -107,9 +107,12 @@ dependencies once: `npm ci` in `../project_code` and in `../backend-api`.
   select the matching testnet; the landing page offers a "Switch to …" button
   if the wallet is on another chain.
 * **Dev-wallet mode** – `project_code/devWallet.js` injects a stand-in for
-  MetaMask that signs with the keys from `accounts.json`; a small panel in the
-  bottom-left corner switches between accounts. Meant for local testing and
-  automated browser runs only: the keys are embedded in the local dev bundle.
+  MetaMask; a small panel in the bottom-left corner switches between the test
+  accounts. The page holds only their addresses: transactions are signed by
+  the backend API (`backend-api/devWallet.js`) with the keys from
+  `accounts.json`, which `app-env.js` writes to `backend-api/.env`. The
+  backend signs only calls to this deployment's two contracts. Meant for
+  testing with throw-away accounts: whoever can reach the app can act as them.
 
 The backend keeps its data in
 `../backend-api/data/ais-<network>-<start of the Auctions address>.sqlite`,

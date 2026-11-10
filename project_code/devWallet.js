@@ -1,15 +1,20 @@
-// Development-only wallet for local testing WITHOUT MetaMask.
+// Development-only wallet for testing WITHOUT MetaMask.
 //
 // When NEXT_PUBLIC_DEV_WALLET=1 this installs an EIP-1193 provider as
-// window.ethereum that signs with the TESTNET keys listed in
-// NEXT_PUBLIC_DEV_WALLET_ACCOUNTS ("label:privateKey,label:privateKey") and
-// broadcasts through the network's public RPC. It lets every role in the app
-// (admin, initiator, transport, facility) be exercised from one browser tab,
-// including by automated browser tests, with no extension pop-ups.
+// window.ethereum for the TEST accounts listed in
+// NEXT_PUBLIC_DEV_WALLET_ACCOUNTS ("label:address,label:address"). It lets
+// every role in the app (admin, initiator, transport, facility) be exercised
+// from one browser tab, including by automated browser tests, with no
+// extension pop-ups.
 //
-// It is never installed unless the flag is set, and it must only ever be given
-// throw-away testnet keys: the keys end up in the browser bundle.
-import { Wallet, providers, utils, BigNumber } from "ethers";
+// The page never holds a private key. Transactions are handed to the backend
+// API (backend-api/devWallet.js), which holds the keys, signs and broadcasts
+// them, and only for this deployment's contracts. Everything else (reads, gas
+// estimates, receipts) goes straight to the network's public RPC.
+//
+// It is never installed unless the flag is set, and must only ever be used
+// with throw-away testnet accounts: whoever can open the app can act as them.
+import { providers, utils } from "ethers";
 
 const STORAGE_KEY = "scefsta-dev-wallet";
 
@@ -35,12 +40,18 @@ export function parseDevAccounts(spec) {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry) => {
-      const [label, privateKey] = entry.split(":");
-      return { label, privateKey };
+      const [label, address] = entry.split(":");
+      return { label, address: utils.getAddress(address) };
     });
 }
 
-export function installDevWallet({ chainId, rpcUrl, networkLabel, accounts }) {
+export function installDevWallet({
+  chainId,
+  rpcUrl,
+  signerUrl,
+  networkLabel,
+  accounts,
+}) {
   if (typeof window === "undefined") return;
   if (window.ethereum && window.ethereum.isDevWallet) return;
   if (!accounts.length) {
@@ -49,9 +60,9 @@ export function installDevWallet({ chainId, rpcUrl, networkLabel, accounts }) {
   }
 
   const rpc = new providers.StaticJsonRpcProvider(rpcUrl, chainId);
-  const wallets = accounts.map(({ label, privateKey }) => ({
+  const wallets = accounts.map(({ label, address }) => ({
     label,
-    wallet: new Wallet(privateKey, rpc),
+    wallet: { address },
   }));
 
   const state = loadState();
@@ -78,49 +89,48 @@ export function installDevWallet({ chainId, rpcUrl, networkLabel, accounts }) {
   };
   const rpcError = (code, message) => Object.assign(new Error(message), { code });
 
+  // The backend signs and broadcasts; it answers with the transaction hash
   async function sendTransaction(tx) {
     const wallet = current();
     if (tx.from && tx.from.toLowerCase() !== wallet.address.toLowerCase()) {
       throw rpcError(4100, "Transaction 'from' is not the selected dev-wallet account");
     }
 
-    const request = { to: tx.to, data: tx.data || tx.input };
-    if (tx.value !== undefined) request.value = BigNumber.from(tx.value);
+    const body = { from: wallet.address, to: tx.to, data: tx.data || tx.input };
+    if (tx.value !== undefined) body.value = utils.hexValue(tx.value);
     const gas = tx.gas !== undefined ? tx.gas : tx.gasLimit;
-    if (gas !== undefined) request.gasLimit = BigNumber.from(gas);
-    if (tx.nonce !== undefined) request.nonce = BigNumber.from(tx.nonce).toNumber();
-
-    // Ask the node for the tip instead of using ethers' fixed 1.5 gwei, which
-    // is below the minimum accepted on Polygon.
-    const [block, tip] = await Promise.all([
-      rpc.getBlock("latest"),
-      rpc.send("eth_maxPriorityFeePerGas", []).catch(() => null),
-    ]);
-    if (block.baseFeePerGas && tip) {
-      request.type = 2;
-      request.maxPriorityFeePerGas = BigNumber.from(tip);
-      request.maxFeePerGas = block.baseFeePerGas.mul(2).add(tip);
-    } else {
-      request.gasPrice = await rpc.getGasPrice();
-    }
+    if (gas !== undefined) body.gas = utils.hexValue(gas);
 
     setStatus("Signing and sending transaction…");
+    let hash;
     try {
-      const sent = await wallet.sendTransaction(request);
-      setStatus(`Sent ${sent.hash.slice(0, 12)}… waiting to be mined`);
-      sent
-        .wait()
-        .then((receipt) =>
-          setStatus(
-            `${receipt.status === 1 ? "Mined" : "REVERTED"} ${sent.hash.slice(0, 12)}… in block ${receipt.blockNumber}`
-          )
-        )
-        .catch((error) => setStatus(`Failed ${sent.hash.slice(0, 12)}…: ${error.reason || error.message}`));
-      return sent.hash;
+      const response = await fetch(signerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const answer = await response.json().catch(() => ({}));
+      if (!response.ok || !answer.hash) {
+        throw new Error(
+          answer.error || `The signing service answered ${response.status}`
+        );
+      }
+      hash = answer.hash;
     } catch (error) {
-      setStatus(`Rejected: ${error.reason || error.message}`);
-      throw error;
+      setStatus(`Rejected: ${error.message}`);
+      throw rpcError(-32000, error.message);
     }
+
+    setStatus(`Sent ${hash.slice(0, 12)}… waiting to be mined`);
+    rpc
+      .waitForTransaction(hash)
+      .then((receipt) =>
+        setStatus(
+          `${receipt.status === 1 ? "Mined" : "REVERTED"} ${hash.slice(0, 12)}… in block ${receipt.blockNumber}`
+        )
+      )
+      .catch((error) => setStatus(`Failed ${hash.slice(0, 12)}…: ${error.reason || error.message}`));
+    return hash;
   }
 
   async function request({ method, params = [] }) {
@@ -149,15 +159,10 @@ export function installDevWallet({ chainId, rpcUrl, networkLabel, accounts }) {
       case "eth_sendTransaction":
         return sendTransaction(params[0]);
       case "personal_sign":
-        return current().signMessage(utils.arrayify(params[0]));
       case "eth_sign":
-        return current().signMessage(utils.arrayify(params[1]));
-      case "eth_signTypedData_v4": {
-        const typed = typeof params[1] === "string" ? JSON.parse(params[1]) : params[1];
-        const types = { ...typed.types };
-        delete types.EIP712Domain;
-        return current()._signTypedData(typed.domain, types, typed.message);
-      }
+      case "eth_signTypedData_v4":
+        // the app never signs messages, so the signing service does not either
+        throw rpcError(4200, "The dev wallet does not sign messages");
       default:
         return rpc.send(method, params);
     }
@@ -215,7 +220,7 @@ export function installDevWallet({ chainId, rpcUrl, networkLabel, accounts }) {
       "box-shadow:0 2px 8px rgba(0,0,0,.25);max-width:340px";
 
     const title = document.createElement("div");
-    title.textContent = `Dev wallet · ${networkLabel} · testnet keys only`;
+    title.textContent = `Dev wallet · ${networkLabel} · test accounts only`;
     title.style.cssText = "font-weight:600;margin-bottom:4px";
 
     const select = document.createElement("select");

@@ -57,7 +57,7 @@ async function postTender(poster = hirer, deliveryTime = DELIVERY) {
   await send(
     auctions
       .connect(poster)
-      .postTender(AUCTION, deliveryTime, "1 Main St", "Oxford", "Ohio", "45056", PENALTY, "Low", [facility.address], { value: MAX_BID }),
+      .postTender(AUCTION, deliveryTime, "1 Example St", "Sampletown", "Nevada", "10001", PENALTY, "Low", [facility.address], { value: MAX_BID }),
     "postTender"
   );
   return id;

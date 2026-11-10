@@ -19,31 +19,18 @@ const { JsonRpcProvider, Contract } = require("ethers");
 const { getNetwork } = require("./networks");
 const { loadAccounts } = require("./accounts");
 const { compile } = require("./compile");
+const { randomProfile } = require("./sample-data");
 
 // on-chain TenderStatus -> Patients.status
 const PATIENT_STATUS = ["accepted", "incoming", "pending", "retracted", "reclaimed"];
 
-// Users rows for the role accounts: [on-chain check, column values]
+// Users rows for the role accounts: [on-chain check, kind of made-up profile
+// (see sample-data.js)]
 const ROLE_PROFILES = {
-  initiator: ["isInitiator", {
-    address: "331 S Front St", city: "Hamilton", state: "Ohio", zipcode: 45011,
-    policeDept: "Hamilton Police Dept", stationNumber: "7",
-    initiatorType: "emergency", accountType: "initiator",
-  }],
-  transport1: ["isAmbulance", {
-    address: "1 High St", city: "Hamilton", state: "Ohio", zipcode: 45011,
-    transportCompany: "Butler County Ambulance", licensePlate: "BCA 1001",
-    accountType: "transport",
-  }],
-  transport2: ["isAmbulance", {
-    address: "25 Main St", city: "Middletown", state: "Ohio", zipcode: 45042,
-    transportCompany: "Miami Valley Medical Transport", licensePlate: "MVT 2002",
-    accountType: "transport",
-  }],
-  facility: ["isHospital", {
-    address: "3000 Mack Rd", city: "Fairfield", state: "Ohio", zipcode: 45014,
-    facilityName: "Fairfield General Hospital", accountType: "facility",
-  }],
+  initiator: ["isInitiator", "initiator"],
+  transport1: ["isAmbulance", "transport"],
+  transport2: ["isAmbulance", "transport"],
+  facility: ["isHospital", "facility"],
 };
 
 // The backend owns the database: its code names the file (one per deployed
@@ -108,10 +95,13 @@ async function syncDatabase(networkName) {
   const userExists = db.prepare("SELECT 1 FROM Users WHERE walletId = ?");
   const roles = loadAccounts().roles || {};
   let usersAdded = 0;
-  for (const [role, [check, profile]] of Object.entries(ROLE_PROFILES)) {
+  const namesInUse = [];
+  for (const [role, [check, kind]] of Object.entries(ROLE_PROFILES)) {
     const account = roles[role];
     if (!account || userExists.get(account.address)) continue;
     if (!(await accountsContract[check](account.address))) continue;
+    const profile = randomProfile(kind, namesInUse);
+    namesInUse.push(profile.transportCompany, profile.facilityName);
     const columns = ["walletId", ...Object.keys(profile)];
     db.prepare(
       `INSERT INTO Users (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`
