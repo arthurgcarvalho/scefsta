@@ -19,7 +19,7 @@ const { JsonRpcProvider, Contract } = require("ethers");
 const { getNetwork } = require("./networks");
 const { loadAccounts } = require("./accounts");
 const { compile } = require("./compile");
-const { randomProfile } = require("./sample-data");
+const { randomProfile, randomCase } = require("./sample-data");
 
 // on-chain TenderStatus -> Patients.status
 const PATIENT_STATUS = ["accepted", "incoming", "pending", "retracted", "reclaimed"];
@@ -73,20 +73,25 @@ async function syncDatabase(networkName) {
   const patientExists = db.prepare("SELECT 1 FROM Patients WHERE patientId = ?");
   const insertPatient = db.prepare(
     `INSERT INTO Patients (patientId, address, city, state, zipcode, injuries, mechanismOfInjury, severity, status)
-     VALUES (?, ?, ?, ?, ?, 'N/A', 'N/A', ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
   let patientsAdded = 0;
   for (const tender of tenders) {
     const patientId = Number(tender.tenderId) + 1;
     if (patientExists.get(patientId)) continue;
     const details = tender.details;
+    // the chain stores only the severity; the injury details live in the
+    // database, so a made-up case of that severity stands in for them
+    const sample = randomCase(details.severity);
     insertPatient.run(
       patientId,
       details.addr,
       details.city,
       details.state,
       Number(details.zipcode) || 0,
-      details.severity || "N/A",
+      sample.injuries,
+      sample.mechanism,
+      details.severity || sample.severity,
       PATIENT_STATUS[Number(tender.status)]
     );
     patientsAdded++;

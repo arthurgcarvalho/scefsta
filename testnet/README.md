@@ -90,6 +90,20 @@ call. It takes about four minutes, refuses to start if a role account is low
 on funds, and finishes by running `sync-db.js`, which gives the tenders and
 role accounts it created matching rows in the Dapp's local database.
 
+To give every dashboard of the Dapp something to show, fill the deployment
+with demo data afterwards:
+
+```bash
+node seed-demo.js <network>
+```
+
+It registers a few extra facilities, transport providers and initiators, posts
+tenders that stay open for weeks (some with sealed bids from the two transport
+accounts), runs some auctions to "in progress" with delivery dates weeks away,
+delivers two, and writes the matching patient records and bid nonces to the
+local database. Addresses, organisations, injuries and amounts are made up at
+random (`sample-data.js`).
+
 ## 6. Run the Dapp
 
 ```bash

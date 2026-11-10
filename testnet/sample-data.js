@@ -38,6 +38,39 @@ const FACILITY_NAMES = [
 ];
 const FACILITY_TYPES = ["General Hospital", "Medical Center", "Regional Hospital"];
 const SEVERITIES = ["Low", "Medium", "High", "Critical"];
+// [injuries, mechanism of injury] by severity, as entered in the tender form
+const CASES = {
+  Low: [
+    ["Fractured wrist", "Fall"],
+    ["Mild concussion", "Sports injury"],
+    ["Dislocated shoulder", "Bicycle crash"],
+    ["Lower back strain", "Workplace accident"],
+    ["Ankle fracture", "Sports injury"],
+    ["Scheduled dialysis transfer", "Non-emergency transport"],
+  ],
+  Medium: [
+    ["Head laceration", "Motor vehicle collision"],
+    ["Hip fracture", "Fall"],
+    ["Second-degree burns to forearm", "Kitchen accident"],
+    ["Deep leg laceration", "Workplace accident"],
+    ["Dehydration and dizziness", "Heat exposure"],
+    ["Fractured collarbone", "Bicycle crash"],
+  ],
+  High: [
+    ["Chest pain and shortness of breath", "Medical emergency"],
+    ["Severe allergic reaction", "Insect sting"],
+    ["Multiple rib fractures", "Motor vehicle collision"],
+    ["Diabetic emergency", "Medical emergency"],
+    ["Open tibia fracture", "Fall from ladder"],
+  ],
+  Critical: [
+    ["Suspected stroke", "Medical emergency"],
+    ["Cardiac arrest, resuscitated", "Medical emergency"],
+    ["Severe head trauma", "Motor vehicle collision"],
+    ["Internal bleeding", "Fall from height"],
+    ["Respiratory failure", "Smoke inhalation"],
+  ],
+};
 const LETTERS = "ABCDEFGHJKLMNPRSTUVWXYZ";
 
 const pick = (list) => list[randomInt(list.length)];
@@ -55,6 +88,14 @@ function randomAddress() {
 }
 
 const randomSeverity = () => pick(SEVERITIES);
+
+// { injuries, mechanism, severity }: a made-up case of the given severity
+// (any severity if none, or an unknown one, is given)
+function randomCase(severity) {
+  const level = CASES[severity] ? severity : randomSeverity();
+  const [injuries, mechanism] = pick(CASES[level]);
+  return { injuries, mechanism, severity: level };
+}
 
 // Users-table columns for a test account of the given kind
 // ("initiator" | "transport" | "facility"); taken lists names already in use
@@ -93,4 +134,4 @@ function randomProfile(kind, taken = []) {
   throw new Error(`No sample profile for "${kind}"`);
 }
 
-module.exports = { randomAddress, randomSeverity, randomProfile };
+module.exports = { randomAddress, randomSeverity, randomCase, randomProfile };

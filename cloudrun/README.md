@@ -97,11 +97,20 @@ after every change, and restores it from there when the container starts
 limited to one instance. The file is named after the Auctions contract, so
 redeploying the contracts starts a fresh database.
 
-To look at or replace the hosted database:
+To work on the hosted database from this machine (for example to add demo data
+with `testnet/seed-demo.js`), copy it down, change it, and copy it back; the
+second command also restarts the service so that it loads the new file:
 
 ```bash
-gcloud storage ls gs://<gcp-project-id>-scefsta-data
+node cloudrun/db.js pull <gcp-project-id>
 ```
+
+```bash
+node cloudrun/db.js push <gcp-project-id> [region]
+```
+
+Anything written through the hosted app between the two is lost, so do both in
+one go. Stop the local backend before pulling.
 
 ## Running the hosted build locally
 

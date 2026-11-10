@@ -182,6 +182,16 @@ no footer on the landing page, and it runs against the third Sepolia
 deployment, whose tenders and test users are made up at random. The page's
 scripts list only that deployment (no other networks or earlier addresses).
 
+Demo data was then added with `node seed-demo.js sepolia` and copied to the
+hosted database (`node cloudrun/db.js push`): eight extra organisations, six
+open tenders (auctions closing between 17 November and 25 December 2026, seven
+sealed bids on them), three tenders in progress (deliveries due 24 November to
+10 December) and two more delivered ones, 15 tenders in all, each with a
+patient record that has injury details. Checked on the hosted copy: the
+transport dashboard shows 6 available tenders, 9 placed bids and 3 in
+progress; the facility dashboard shows 6 pending, 3 incoming and 4 accepted
+patients.
+
 The hosted copy has its own database. It and the local Sepolia setup use the
 same contracts, so a tender posted from one has no patient record in the
 other; use one of them for Sepolia from here on.
