@@ -125,7 +125,7 @@ contract AuctionsTest is Test {
 
         skip(timeLimit + 5);
         hoax(ambulance, 1000 ether);
-        auc.revealBid{value: penalty}(tenderId, bidVal, saltVal, bidID);
+        auc.revealBid(tenderId, bidVal, saltVal, bidID);
 
         Auctions.Tender[] memory tenders = auc.getAllTenders();
         assertTrue(tenders[tenderId].status == Auctions.TenderStatus.InProgress, "Tender is not in progress");
@@ -144,7 +144,7 @@ contract AuctionsTest is Test {
 
         skip(timeLimit + 5);
         hoax(ambulance, 1000 ether);
-        auc.revealBid{value: penalty}(tender, bidVal, saltVal, bidID);
+        auc.revealBid(tender, bidVal, saltVal, bidID);
 
         skip(320);
         hoax(hospital, 1000 ether);
@@ -165,10 +165,18 @@ contract AuctionsTest is Test {
 
         skip(timeLimit + 5);
         hoax(ambulance, 1000 ether);
-        auc.revealBid{value: penalty}(tender, bidVal, saltVal, bidID);
+        auc.revealBid(tender, bidVal, saltVal, bidID);
 
-        hoax(initiator, 1000 ether);
+        // a tender can only be reclaimed once its delivery is overdue
+        skip(300 + deliveryTime + 1);
+        uint256 balanceBefore = initiator.balance;
+        vm.prank(initiator);
         auc.reclaimTender(tender);
+
+        // the poster gets the escrow back plus the accepter's penalty deposit
+        assertEq(initiator.balance - balanceBefore, 10000 + penalty);
+        Auctions.Tender[] memory tenders = auc.getAllTenders();
+        assertTrue(tenders[tender].status == Auctions.TenderStatus.Reclaimed, "Tender is not reclaimed");
     }
 
     function testRetractTender() public {
@@ -211,10 +219,74 @@ contract AuctionsTest is Test {
 
         skip(timeLimit + 5);
         hoax(ambulance, 1000 ether);
-        auc.revealBid{value: penalty}(tender, bidVal, saltVal, bidID1);
+        auc.revealBid(tender, bidVal, saltVal, bidID1);
 
         skip(320);
         address winner = auc.getAuctionWinner(tender);
         assertEq(winner, ambulance);
+    }
+
+    // the lowest revealed bid wins, whatever the order of the reveals
+    function testLowestBidWins() public {
+        hoax(initiator, 10000 ether);
+        tender = auc.postTender{value: 10000}(timeLimit, deliveryTime, "311 Thatcher Loop", "Oxford", "Ohio", "45056", penalty, "High", allowedHospitals);
+
+        hoax(ambulance, 10000 ether);
+        uint bidID1 = auc.secretBid{value: penalty}(tender, hashVal);
+
+        uint256 lowerBid = bidVal - 10;
+        uint256 hashVal2 = uint(keccak256(abi.encodePacked(lowerBid + saltVal)));
+        hoax(ambulance2, 10000 ether);
+        uint bidID2 = auc.secretBid{value: penalty}(tender, hashVal2);
+
+        // both bidders now appear in the tender list
+        Auctions.Tender[] memory tenders = auc.getAllTenders();
+        assertEq(tenders[tender].details.bidders.length, 2);
+
+        // the higher bid is revealed first, then the lower one takes over
+        skip(timeLimit + 5);
+        vm.prank(ambulance);
+        auc.revealBid(tender, bidVal, saltVal, bidID1);
+        vm.prank(ambulance2);
+        auc.revealBid(tender, lowerBid, saltVal, bidID2);
+
+        skip(320);
+        assertEq(auc.getAuctionWinner(tender), ambulance2);
+        tenders = auc.getAllTenders();
+        assertTrue(tenders[tender].details.finalBid == lowerBid);
+    }
+
+    // on-time delivery pays bid + deposit to the winner; the loser withdraws
+    function testPayoutAndDepositRefund() public {
+        hoax(initiator, 10000 ether);
+        tender = auc.postTender{value: 10000}(timeLimit, deliveryTime, "311 Thatcher Loop", "Oxford", "Ohio", "45056", penalty, "High", allowedHospitals);
+
+        hoax(ambulance, 10000 ether);
+        uint bidID1 = auc.secretBid{value: penalty}(tender, hashVal);
+
+        uint256 lowerBid = bidVal - 10;
+        uint256 hashVal2 = uint(keccak256(abi.encodePacked(lowerBid + saltVal)));
+        hoax(ambulance2, 10000 ether);
+        uint bidID2 = auc.secretBid{value: penalty}(tender, hashVal2);
+
+        skip(timeLimit + 5);
+        vm.prank(ambulance);
+        auc.revealBid(tender, bidVal, saltVal, bidID1);
+        vm.prank(ambulance2);
+        auc.revealBid(tender, lowerBid, saltVal, bidID2);
+        skip(320);
+
+        uint256 winnerBefore = ambulance2.balance;
+        uint256 posterBefore = initiator.balance;
+        vm.prank(hospital);
+        auc.verifyDelivery(tender);
+        assertEq(ambulance2.balance - winnerBefore, lowerBid + penalty);
+        assertEq(initiator.balance - posterBefore, 10000 - lowerBid);
+
+        uint256 loserBefore = ambulance.balance;
+        vm.prank(ambulance);
+        auc.withdrawDeposit(tender);
+        assertEq(ambulance.balance - loserBefore, penalty);
+        assertEq(address(auc).balance, 0);
     }
 }

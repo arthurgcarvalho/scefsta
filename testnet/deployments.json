@@ -1,0 +1,104 @@
+{
+  "sepolia": {
+    "network": "Ethereum Sepolia",
+    "chainId": 11155111,
+    "currency": "ETH",
+    "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
+    "explorer": "https://sepolia.etherscan.io",
+    "deployer": "0xbdB61Ada027eF27ef0709D3848Db1Dd13c96F970",
+    "deployedAt": "2026-11-10T04:41:24.883Z",
+    "accountsAddress": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
+    "auctionsAddress": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c",
+    "transactions": {
+      "accounts": {
+        "address": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
+        "txHash": "0xcbce41ba11ca2243dc455fce534df7d585e3fc1e72a12af313b42cda0ce8726b",
+        "blockNumber": 12102333,
+        "gasUsed": "13232067",
+        "feePaid": "0.000000001071797427"
+      },
+      "auctions": {
+        "address": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c",
+        "txHash": "0x19004073d8444465f478665aa744a91bb76a24fad0444bd6f4f5d87987300d30",
+        "blockNumber": 12102335,
+        "gasUsed": "28656205",
+        "feePaid": "0.000000002321152605"
+      }
+    },
+    "previous": [
+      {
+        "deployedAt": "2026-11-10T02:50:38.796Z",
+        "accountsAddress": "0x4f34d6779619D2746184F032Bc65FfC2A25dB1E4",
+        "auctionsAddress": "0x177e5Dd67287C68F331d6EdCE59F326b7043a498"
+      }
+    ]
+  },
+  "fuji": {
+    "network": "Avalanche Fuji (C-Chain)",
+    "chainId": 43113,
+    "currency": "AVAX",
+    "rpcUrl": "https://api.avax-test.network/ext/bc/C/rpc",
+    "explorer": "https://testnet.snowtrace.io",
+    "deployer": "0x8ce4a9D2cc66003a89047fF14BA8F231528fDB16",
+    "deployedAt": "2026-11-10T04:37:17.308Z",
+    "accountsAddress": "0xcf2e105F63275756d9dBB0c8183e113aEA18101E",
+    "auctionsAddress": "0x9549d6EF5b36c83dbA8d77c4D0812164fA5082E1",
+    "transactions": {
+      "accounts": {
+        "address": "0xcf2e105F63275756d9dBB0c8183e113aEA18101E",
+        "txHash": "0xdca5b34ab605dbbefe2f7dc25bb81bbb212ccf81e133a4d8a3b94e96707f86be",
+        "blockNumber": 60816532,
+        "gasUsed": "1905409",
+        "feePaid": "0.00000000030486544"
+      },
+      "auctions": {
+        "address": "0x9549d6EF5b36c83dbA8d77c4D0812164fA5082E1",
+        "txHash": "0x3a3149b0ce069cf7ce023345a68a3c0e1fb92d631691344d66eacc4ce7ef4fa3",
+        "blockNumber": 60816537,
+        "gasUsed": "4028587",
+        "feePaid": "0.00000000064457392"
+      }
+    },
+    "previous": [
+      {
+        "deployedAt": "2026-11-10T03:41:29.454Z",
+        "accountsAddress": "0x452a35eC100e4B4FD1E77f8f81B65d628382b0C0",
+        "auctionsAddress": "0x7c476B1d85f83e7fE30AED5842be3fF251c9406b"
+      }
+    ]
+  },
+  "amoy": {
+    "network": "Polygon Amoy",
+    "chainId": 80002,
+    "currency": "POL",
+    "rpcUrl": "https://polygon-amoy-bor-rpc.publicnode.com",
+    "explorer": "https://amoy.polygonscan.com",
+    "deployer": "0x5cb5775931f5820e63D28B6d3f403a2120421969",
+    "deployedAt": "2026-11-10T04:40:51.747Z",
+    "accountsAddress": "0x000e505402B9EB8a041746bDd8fFFe9E72cA466e",
+    "auctionsAddress": "0xa7b7d18Aa90e5135a21eF12E0e5389106490b202",
+    "transactions": {
+      "accounts": {
+        "address": "0x000e505402B9EB8a041746bDd8fFFe9E72cA466e",
+        "txHash": "0x8409e031ed28cd302f9f1d5c31999deadbcd83b9273a8822482f7ef2d57f16f6",
+        "blockNumber": 52463026,
+        "gasUsed": "1922209",
+        "feePaid": "0.057666269996155582"
+      },
+      "auctions": {
+        "address": "0xa7b7d18Aa90e5135a21eF12E0e5389106490b202",
+        "txHash": "0x996e2bb0eb4bf8fe970c0a3d6f03cd2bb35954cc40e78fee49ad9d988e4f5db4",
+        "blockNumber": 52463030,
+        "gasUsed": "4031935",
+        "feePaid": "0.12095804999193613"
+      }
+    },
+    "previous": [
+      {
+        "deployedAt": "2026-11-10T03:41:40.131Z",
+        "accountsAddress": "0x14b87ef914B81dABdfE25483C4f5a4Bfc5f4018c",
+        "auctionsAddress": "0xC9d768e3c0977857746cC67DfD32a26299b3E6FC"
+      }
+    ]
+  }
+}

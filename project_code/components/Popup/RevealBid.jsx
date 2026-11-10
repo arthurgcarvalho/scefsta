@@ -19,7 +19,7 @@ const web3 = new Web3();
  *
  * @param {*} tenderId ID of the tender
  * @param {*} bidValue value of the ambulance's bid
- * @param {*} penaltyAmt the penalty amount of the tender
+ * @param {*} penaltyAmt the penalty amount deposited with the bid
  * @returns
  */
 export default function RevealBid({
@@ -38,6 +38,13 @@ export default function RevealBid({
     "revealBid"
   );
 
+  // A bidder who did not win takes the penalty deposit back after the reveal
+  // period (the contract refuses it earlier, and for the winner)
+  const { send: sendWithdraw, state: withdrawState } = useContractFunction(
+    AUCTION_INSTANCE,
+    "withdrawDeposit"
+  );
+
   const handlebidValue = (event) => {
     setBidValue(event.target.value);
   };
@@ -50,10 +57,11 @@ export default function RevealBid({
      * bidValue - wei value of bid
      * salt - 10 digit salt (all are 1234567890 for simplicity)
      * bidID - ID of the bid
-     * penaltyAmt - msg.value
      *
+     * The penalty was already deposited with the sealed bid, so nothing is
+     * paid here.
      */
-    send(tenderId, bidValue, saltVal, bidId, { value: penaltyAmt });
+    send(tenderId, bidValue, saltVal, bidId);
   };
 
   const finalizeTransaction = async () => {
@@ -155,15 +163,58 @@ export default function RevealBid({
       <Alert severity="info">
         <i>Remember</i>: the{" "}
         <strong>
-          penalty fee associated with this job will be put in escrow.
+          penalty fee you deposited with this bid is held in escrow.
         </strong>{" "}
-        If your bid succeeds, your penalty funds will be returned to you.
+        The lowest revealed bid wins. If you win, the deposit is returned with
+        your payment when the delivery is confirmed on time. If you do not win,
+        withdraw it here once the reveal period is over.
       </Alert>
       <div className={styles.buttonDiv}>
         <Button variant="contained" onClick={handleRevealBid}>
           Reveal Bid
+        </Button>{" "}
+        <Button variant="outlined" onClick={() => sendWithdraw(tenderId)}>
+          Withdraw Deposit
         </Button>
       </div>
+      {(function () {
+        if (withdrawState.status === "Mining") {
+          return (
+            <div>
+              <Alert severity="warning">
+                Waiting for the deposit to be returned
+              </Alert>
+              <Box sx={{ display: "flex" }}>
+                <CircularProgress />
+              </Box>
+            </div>
+          );
+        }
+        if (transactionErrored(withdrawState)) {
+          return (
+            <div>
+              <Alert severity="error">
+                Deposit withdrawal failed:{" "}
+                {
+                  // show the contract's reason when the wallet reports one
+                  (/execution reverted: ([^"\\]+)/.exec(
+                    withdrawState.errorMessage || ""
+                  ) || [])[1] || withdrawState.errorMessage
+                }
+              </Alert>
+            </div>
+          );
+        }
+        if (withdrawState.status === "Success") {
+          return (
+            <div>
+              <Alert severity="success">
+                Your penalty deposit has been returned to your wallet
+              </Alert>
+            </div>
+          );
+        }
+      })()}
       {(function () {
         if (state.status === "Mining") {
           return (

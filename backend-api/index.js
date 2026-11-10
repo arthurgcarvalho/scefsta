@@ -2,7 +2,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const express = require("express");
-const mysql = require("mysql2");
+const { createConnection } = require("./db");
 const bodyParser = require("body-parser"); // Add this line
 const cors = require("cors");
 
@@ -44,14 +44,9 @@ const { addSalt, getSalts, deleteSalt } = require("./api/salts");
 
 const { getUser } = require("./api/users");
 
-// Database connection configuration
-const connection = mysql.createConnection({
-  host: "ambulance-blockchain.sec.csi.miamioh.edu",
-  port: 3306,
-  user: "ais_user",
-  password: "zebra",
-  database: "AIS",
-});
+// Database connection configuration (local SQLite by default, or the original
+// MySQL server with DB_DRIVER=mysql; see db.js)
+const connection = createConnection();
 
 // Establish the connection
 connection.connect((err) => {

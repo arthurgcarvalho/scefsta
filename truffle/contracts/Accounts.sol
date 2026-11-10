@@ -11,7 +11,7 @@ contract Accounts {
     mapping(address => bool) private ambulances;
     mapping(address => bool) private hospitals;
 
-    // set the superAdmin and initalize a few accounts
+    // set the superAdmin; every other account is added by an admin afterwards
     constructor() {
         // add superAdmin to all account types (for demo purposes only)
         superAdmin = msg.sender;
@@ -19,25 +19,6 @@ contract Accounts {
         initiators[superAdmin] = true;
         ambulances[superAdmin] = true;
         hospitals[superAdmin] = true;
-
-        // setup default accounts
-        address emergencyInitiator = 0xcdF98E3f41A0160360884f67BF8FfF35D92d4E2f;
-        address hospital = 0x37b17D21569C2cA6c7A078f2283D06BC222F554C;
-        address ambulance = 0x9f8d25e9e3261d328e1Bef34CdbadB9310E451Fc;
-        address admin = 0xEE8fb1E70B2Cd462cC0eE0ABb12B36db6D0932B2;
-        address privateInitiator = 0xC53762A6D1E4557Ab363eE38042828fcfBF064bE;
-        address interfacility = 0xb153eDE174EDC76EA00D706ce678b3aF28379887;
-
-        // allocate accounts
-        admins[admin] = true;
-        hospitals[hospital] = true;
-        hospitals[interfacility] = true;
-        initiators[emergencyInitiator] = true;
-        initiators[privateInitiator] = true;
-        initiators[interfacility] = true;
-        ambulances[ambulance] = true;
-        
-
     }
 
      // returns true if address is an ambulance, false if not

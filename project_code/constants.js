@@ -54,23 +54,17 @@ export const saltVal = "saltVal";
 export const bidId = "bidId";
 export const bidVal = "bidVal";
 
-// API URLs
-export const getAdmins =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/admins";
-export const getPatients =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/patients";
-export const getPolice =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/police";
-export const getAmbulances =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/ambulances";
-export const getHospitals =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/hospitals";
-export const getTenders =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/tenders";
-export const getSalts =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/salts";
-export const getUsers =
-  "http://ambulance-blockchain.sec.csi.miamioh.edu:5000/api/users";
+// API URLs. The backend-api server runs locally by default; override with
+// NEXT_PUBLIC_API_URL to point at a hosted instance.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+export const getAdmins = API_URL + "/api/admins";
+export const getPatients = API_URL + "/api/patients";
+export const getPolice = API_URL + "/api/police";
+export const getAmbulances = API_URL + "/api/ambulances";
+export const getHospitals = API_URL + "/api/hospitals";
+export const getTenders = API_URL + "/api/tenders";
+export const getSalts = API_URL + "/api/salts";
+export const getUsers = API_URL + "/api/users";
 
 export const APP_DOMAIN = "http://localhost:3000";
 export const HEADERS = {

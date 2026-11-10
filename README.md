@@ -37,6 +37,9 @@ This project has 6 main directories that encompass the entire codebase.
     - The truffle directory houses the smart contracts that are deployed on the blockchain network that is interfaced by the NEXT.js application in /project_code. The /build directory contains the ABI information that must be copied into the /project_code/config.js file after deploying the smart contract. The /contracts directory houses the smart contracts themselves, and the /test directory holds some smart contract tests as well as the test for smart contract API latency.
     - Instructions on how to deploy the smart contracts with truffle are given below in the "Deploying smart contract" section.
 
+# Running on public testnets
+The [testnet](testnet/README.md) directory has scripts to deploy the smart contracts to Ethereum Sepolia, Polygon Amoy and Avalanche Fuji, to check them end to end, and to run the web app and backend API on a single machine against those deployments (no university server, MySQL or local chain needed). The deployed addresses are recorded in [testnet/deployments.json](testnet/deployments.json).
+
 # Installation
 The following instructions show how to set up and deploy this project
 

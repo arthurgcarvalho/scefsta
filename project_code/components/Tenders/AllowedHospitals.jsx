@@ -5,7 +5,9 @@ import HospitalDataGrid from "../Hospitals/HospitalDataGrid";
 import { getDistance } from "geolib";
 import axios from "axios";
 
-const apiKey = "YOUR TOMTOM API KEY";
+// Optional: without a TomTom key the facility list still loads, but the
+// distance / travel-time columns stay empty.
+const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY || "YOUR TOMTOM API KEY";
 
 export const AllowedHospitals = ({
   address,

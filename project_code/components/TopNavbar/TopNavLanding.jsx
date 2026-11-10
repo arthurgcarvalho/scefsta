@@ -15,6 +15,7 @@ import {
 import { providers } from "ethers";
 import * as Constants from "../../constants";
 import Link from "next/link";
+import { CHAIN_ID, NETWORK_LABEL } from "../../pages/_app";
 
 export default function TopNavbar() {
   const [metaInstalled, setMetaInstalled] = useState(false);
@@ -23,9 +24,21 @@ export default function TopNavbar() {
   const etherBalance = useEtherBalance(account);
 
   const ConnectButton = () => {
-    const { account, deactivate, activateBrowserWallet } = useEthers();
+    const { account, deactivate, activateBrowserWallet, switchNetwork } =
+      useEthers();
     // 'account' being undefined means that we are not connected.
-    if (account) {
+    if (account && chainId !== CHAIN_ID) {
+      // The wallet is on a different chain than the deployed contracts.
+      return (
+        <div>
+          <Button color="warning" className={styles.leftButton} onClick={() => deactivate()}>Disconnect</Button>
+          <span className={styles.halfTab}></span>
+          <Button color="danger" onClick={() => switchNetwork(CHAIN_ID)}>
+            Switch to {NETWORK_LABEL}
+          </Button>
+        </div>
+      );
+    } else if (account) {
       return (
         <div>
           <Button color="warning" className={styles.leftButton} onClick={() => deactivate()}>Disconnect</Button>
@@ -92,6 +105,11 @@ export default function TopNavbar() {
   const login = async () => {
     if (!account) {
       console.error("No account available");
+      return;
+    }
+
+    if (chainId !== CHAIN_ID) {
+      alert(`Please switch your wallet to ${NETWORK_LABEL} before logging in`);
       return;
     }
 

@@ -168,10 +168,14 @@ export default function BiddingForm({
               <Button
                 color="success"
                 onClick={() => {
+                  // Look the event up by name: on networks where ETH transfers
+                  // emit their own log (e.g. Sepolia), BidPlaced is not the
+                  // first entry in the receipt.
+                  const bidPlaced = state1.receipt.events.find(
+                    (receiptEvent) => receiptEvent.event === "BidPlaced"
+                  );
                   finalizeTransaction(
-                    new BigNumber(
-                      state1.receipt.events[0].args["bidId"]["_hex"]
-                    ).toString()
+                    new BigNumber(bidPlaced.args["bidId"]["_hex"]).toString()
                   );
                 }}
               >

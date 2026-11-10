@@ -131,7 +131,7 @@ contract AuctionGasTest is Test {
 
             skip(timeLimit + 10);
             hoax(ambulance, 1000 ether);
-            auc.revealBid{value: penalty}(tender, bidVal, saltVal, bidID);
+            auc.revealBid(tender, bidVal, saltVal, bidID);
             
             skip(320);
             auc.getAuctionWinner(tender);

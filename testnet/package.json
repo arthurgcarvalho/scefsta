@@ -1,0 +1,25 @@
+{
+  "name": "scefsta-testnet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compile and deploy the SCeFSTA contracts to public testnets (Sepolia, Polygon Amoy, Avalanche Fuji)",
+  "scripts": {
+    "compile": "node compile.js",
+    "test": "node local-test.js",
+    "accounts": "node accounts.js",
+    "balances": "node balances.js",
+    "deploy": "node deploy.js",
+    "fund-roles": "node fund-roles.js",
+    "e2e": "node e2e.js",
+    "app-env": "node app-env.js",
+    "backend": "node run.js backend",
+    "frontend": "node run.js frontend"
+  },
+  "dependencies": {
+    "ethers": "^6.13.4",
+    "solc": "0.8.21"
+  },
+  "devDependencies": {
+    "ganache": "^7.9.2"
+  }
+}
