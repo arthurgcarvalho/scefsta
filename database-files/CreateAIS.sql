@@ -43,9 +43,8 @@ CREATE TABLE Salts (
             walletId VARCHAR(100) NOT NULL,
             patientId int NOT NULL,
             bidId int NOT NULL,
-            saltVal BIGINT NOT NULL,
-            bidVal INT NOT NULL,
-            penalty INT NOT NULL,
+            saltVal VARCHAR(66) NOT NULL,
+            bidVal VARCHAR(78) NOT NULL,
             PRIMARY KEY (saltId),
             FOREIGN KEY (walletId) REFERENCES Users(walletId),
             FOREIGN KEY (patientId) REFERENCES Patients(patientId)

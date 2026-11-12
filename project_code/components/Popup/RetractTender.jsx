@@ -7,6 +7,7 @@ import Alert from "@mui/material/Alert";
 import { CircularProgress } from "@mui/material";
 import Box from "@mui/material/Box";
 import { AUCTION_INSTANCE } from "../../pages/_app";
+import { revertReason } from "../../solidityCalls";
 import * as Constants from "../../constants";
 
 export default function RetractTender({ tenderID, setTrigger }) {
@@ -50,7 +51,8 @@ export default function RetractTender({ tenderID, setTrigger }) {
       <h2>Retract Tender?</h2>
       <Alert severity="info">
         <i>Remember</i>: retracting a tender will allow for the recovery of the
-        funds, and will remove the tender from being viewed.{" "}
+        funds, and will remove the tender from being viewed. A tender can be
+        retracted only until its auction end date.
       </Alert>
       <Button onClick={handleRetractTender}>
         <DeleteIcon style={{ fontSize: "36px", color: "red" }} />
@@ -67,7 +69,7 @@ export default function RetractTender({ tenderID, setTrigger }) {
           return (
             <div>
               <Alert severity="error">
-                Tender retraction failed: {state.errorMessage}
+                Tender retraction failed: {revertReason(state.errorMessage)}
               </Alert>
             </div>
           );

@@ -21,8 +21,9 @@ const { loadAccounts } = require("./accounts");
 const { compile } = require("./compile");
 const { randomProfile, randomCase } = require("./sample-data");
 
-// on-chain TenderStatus -> Patients.status
-const PATIENT_STATUS = ["accepted", "incoming", "pending", "retracted", "reclaimed"];
+// on-chain TenderStatus -> Patients.status (an unawarded tender leaves the
+// Dapp's lists the way a retracted one does)
+const PATIENT_STATUS = ["accepted", "incoming", "pending", "retracted", "reclaimed", "retracted"];
 
 // Users rows for the role accounts: [on-chain check, kind of made-up profile
 // (see sample-data.js)]

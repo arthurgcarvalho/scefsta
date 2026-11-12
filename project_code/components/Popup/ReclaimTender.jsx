@@ -7,6 +7,7 @@ import Alert from "@mui/material/Alert";
 import { CircularProgress } from "@mui/material";
 import Box from "@mui/material/Box";
 import { AUCTION_INSTANCE } from "../../pages/_app";
+import { revertReason } from "../../solidityCalls";
 import * as Constants from "../../constants";
 
 export default function ReclaimTender({ tenderID, setTrigger }) {
@@ -67,7 +68,7 @@ export default function ReclaimTender({ tenderID, setTrigger }) {
           return (
             <div>
               <Alert severity="error">
-                Tender reclaiming failed: {state.errorMessage}
+                Tender reclaiming failed: {revertReason(state.errorMessage)}
               </Alert>
             </div>
           );

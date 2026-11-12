@@ -7,6 +7,7 @@ import Popup from "../Popup/Popup";
 import RevealBid from "../Popup/RevealBid";
 import ReclaimTender from "../Popup/ReclaimTender";
 import RetractTender from "../Popup/RetractTender";
+import DetermineWinner from "../Popup/DetermineWinner";
 import styles from "../../styles/Tender.module.css";
 import TenderForm from "../Tenders/TenderForm";
 import BiddingForm from "./BiddingForm";
@@ -41,12 +42,6 @@ const columns = [
     sortable: true,
   },
   {
-    field: "penaltyAmount",
-    headerName: "Penalty Amount",
-    width: 125,
-    sortable: true,
-  },
-  {
     field: "strStatus",
     headerName: "Status",
     width: 100,
@@ -58,6 +53,21 @@ const columns = [
     width: 400,
     sortable: true,
   },
+];
+
+// The hirer's list also holds finished tenders, so it shows when each delivery
+// was confirmed (recorded by the contract), right after the date it was due.
+const deliveryColumn = {
+  field: "deliveryDate",
+  headerName: "Delivery Confirmed",
+  width: 225,
+  sortable: true,
+};
+const dueDateIndex = columns.findIndex((column) => column.field === "dueDate");
+const columnsWithDelivery = [
+  ...columns.slice(0, dueDateIndex + 1),
+  deliveryColumn,
+  ...columns.slice(dueDateIndex + 1),
 ];
 
 /**
@@ -83,13 +93,11 @@ export default function TendersDataGrid({
   // Used for reveal bid popup
   const [tenderID, setTenderID] = useState(0);
   const [bidValue, setBidValue] = useState(0);
-  const [penaltyAmt, setPenaltyAmt] = useState(0);
 
-  function performPopup(index, value, penalty, auctionDate) {
+  function performPopup(index, value, auctionDate) {
     setRowPopup(true);
     setTenderID(index);
     setBidValue(value);
-    setPenaltyAmt(penalty);
     setAuctionEnd(auctionDate);
   }
 
@@ -98,7 +106,7 @@ export default function TendersDataGrid({
     let result = await getAuctionWinner(tenderId, provider);
 
     if (!result) {
-      alert("Tender must be past reveal period");
+      alert("The winner has not been determined yet");
     } else if (result === sessionStorage.getItem("accountId")) {
       alert("You won the auction! Proceed to pickup patient");
     } else {
@@ -130,13 +138,12 @@ export default function TendersDataGrid({
             performPopup(
               row["row"]["id"],
               row["row"]["paymentAmount"],
-              row["row"]["penaltyAmount"],
               row["row"]["auctionDate"]
             );
           }
         }}
         rows={data}
-        columns={columns}
+        columns={openTenders ? columns : columnsWithDelivery}
         initialState={{
           sorting: {
             sortModel: [{ field: "hospitalSystem", sort: "asc" }],
@@ -182,7 +189,7 @@ export default function TendersDataGrid({
           if (openTenders && !biddingForm) {
             return (
               <Popup trigger={rowPopup} setTrigger={setRowPopup}>
-                <RevealBid tenderID={tenderID} penaltyAmt={penaltyAmt} />
+                <RevealBid tenderId={tenderID} setTrigger={setRowPopup} />
               </Popup>
             );
           } else if (biddingForm) {
@@ -190,7 +197,6 @@ export default function TendersDataGrid({
               <Popup trigger={rowPopup} setTrigger={setRowPopup}>
                 <BiddingForm
                   tenderId={tenderID}
-                  penalty={penaltyAmt}
                   setTrigger={setRowPopup}
                   auctionEnd={auctionEnd}
                 />
@@ -208,6 +214,10 @@ export default function TendersDataGrid({
                       setTrigger={setRowPopup}
                     />
                     <RetractTender
+                      tenderID={tenderID}
+                      setTrigger={setRowPopup}
+                    />
+                    <DetermineWinner
                       tenderID={tenderID}
                       setTrigger={setRowPopup}
                     />

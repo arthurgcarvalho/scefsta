@@ -36,7 +36,6 @@ export const licensePlate = "licensePlate";
 export const initiatorType = "initiatorType";
 export const accountType = "accountType";
 export const transportCompany = "transportCompany";
-export const penalty = "penalty";
 export const severity = "severity";
 
 // patient table variables
@@ -96,4 +95,5 @@ export const TENDER_STATUS = {
   2: "Open",
   3: "Retracted",
   4: "Reclaimed",
+  5: "Unawarded",
 };

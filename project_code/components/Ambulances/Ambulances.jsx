@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState, useRef } from "react";
 import AmbulanceDataGrid from "./AmbulanceDataGrid";
+import RevealPolicy from "./RevealPolicy";
 import styles from "../../styles/Ambulances.module.css";
 
 /**
@@ -39,6 +40,7 @@ export default function Ambulances(amb) {
 
   return (
     <div className={styles.container}>
+      {popUpChecked && <RevealPolicy />}
       {
         <AmbulanceDataGrid
           data={searchTerm.length < 1 ? ambulances : searchResults}

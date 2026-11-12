@@ -9,32 +9,38 @@ import InputAdornment from "@mui/material/InputAdornment";
 import { useContractFunction, transactionErrored } from "@usedapp/core";
 import { CircularProgress } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import Web3 from "web3";
+import { providers, utils } from "ethers";
 import { AUCTION_INSTANCE } from "../../pages/_app";
-import crypto from "crypto";
+import { getSuspendedUntil, revertReason } from "../../solidityCalls";
 import * as Constants from "../../constants";
 const BigNumber = require("bignumber.js");
-const web3 = new Web3();
+
+/**
+ * The commitment that seals a bid, as the Auctions contract computes it
+ * (commitmentOf): a hash over the tender, the bidder, the bid and a secret
+ * nonce. It is computed here, in the bidder's browser, so that the bid is
+ * shown to nobody before the reveal.
+ */
+export const sealBid = (tenderId, bidder, bid, nonce) =>
+  utils.keccak256(
+    utils.defaultAbiCoder.encode(
+      ["uint256", "address", "uint256", "uint256"],
+      [tenderId, bidder, bid, nonce]
+    )
+  );
 
 /**
  * Creates bidding form for ambulances.
  * @returns
  */
-export default function BiddingForm({
-  tenderId,
-  penalty,
-  setTrigger,
-  auctionEnd,
-}) {
+export default function BiddingForm({ tenderId, setTrigger, auctionEnd }) {
   const [account, setAccount] = useState();
   const [desiredBid, setDesiredBid] = React.useState("");
   const [salt, setSalt] = React.useState();
+  const [formError, setFormError] = React.useState();
 
-  const generateSalt = () => {
-    let saltVal = crypto.randomBytes(6).toString("hex");
-    let salt_integer = parseInt(saltVal, 16);
-    return salt_integer;
-  };
+  // 256 random bits, as a hexadecimal string
+  const generateSalt = () => utils.hexlify(utils.randomBytes(32));
 
   const handleDesiredBid = (event) => {
     setDesiredBid(event.target.value);
@@ -50,12 +56,33 @@ export default function BiddingForm({
   // submit the bid to the blockchain
   const submitBid = async (event) => {
     event.preventDefault();
-    // generate random salt value (16 digits)
+    setFormError();
+    if (!/^[0-9]+$/.test(desiredBid.trim())) {
+      setFormError("Please enter the bid as a whole number of WEI");
+      return;
+    }
+
+    // The commitment is bound to the address that sends it
+    const provider = new providers.Web3Provider(window.ethereum);
+    const bidder = await provider.getSigner().getAddress();
+
+    // the contract turns suspended providers away; say why beforehand
+    const suspendedUntil = await getSuspendedUntil(bidder, provider);
+    if (suspendedUntil && suspendedUntil * 1000 > Date.now()) {
+      setFormError(
+        "This account is suspended from bidding until " +
+          new Date(suspendedUntil * 1000).toLocaleString() +
+          " because of failed reveals"
+      );
+      return;
+    }
+
+    // generate the secret nonce and seal the bid with it
     let saltVal = generateSalt();
     setSalt(saltVal);
-    let bidSalt = parseInt(desiredBid) + saltVal;
-    let hash = web3.utils.soliditySha3(bidSalt);
-    send1(tenderId, hash, { value: penalty });
+    setAccount(bidder);
+    let hash = sealBid(tenderId, bidder, desiredBid.trim(), saltVal);
+    send1(tenderId, hash);
   };
 
   const finalizeTransaction = async (bidId) => {
@@ -65,8 +92,7 @@ export default function BiddingForm({
       walletId: account,
       saltVal: salt,
       bidId: bidId,
-      bidVal: parseInt(desiredBid),
-      penalty: penalty,
+      bidVal: desiredBid.trim(),
     };
 
     let response = await fetch(Constants.getSalts, {
@@ -139,6 +165,11 @@ export default function BiddingForm({
         </form>
       </div>
 
+      {formError && (
+        <div>
+          <Alert severity="error">{formError}</Alert>
+        </div>
+      )}
       {(function () {
         if (state1.status === "Mining") {
           return (
@@ -154,7 +185,7 @@ export default function BiddingForm({
           return (
             <div>
               <Alert severity="error">
-                Transaction failed: {state1.errorMessage}
+                Transaction failed: {revertReason(state1.errorMessage)}
               </Alert>
             </div>
           );

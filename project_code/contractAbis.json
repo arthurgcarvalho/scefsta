@@ -231,6 +231,150 @@
       "type": "event"
     },
     {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "bidVal",
+          "type": "uint256"
+        }
+      ],
+      "name": "BidRevealed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "until",
+          "type": "uint256"
+        }
+      ],
+      "name": "BidderSuspended",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "provider",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "deliveryDate",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "dueDate",
+          "type": "uint256"
+        }
+      ],
+      "name": "DeliveryVerified",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        }
+      ],
+      "name": "RevealFailed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "failedRevealLimit",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "failedRevealWindow",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "suspensionPeriod",
+          "type": "uint256"
+        }
+      ],
+      "name": "RevealPolicyChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "winningBid",
+          "type": "uint256"
+        }
+      ],
+      "name": "WinnerDetermined",
+      "type": "event"
+    },
+    {
       "inputs": [
         {
           "internalType": "uint256",
@@ -243,12 +387,95 @@
           "type": "address"
         }
       ],
-      "name": "depositHeld",
+      "name": "bids",
       "outputs": [
         {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint248",
+          "name": "amount",
+          "type": "uint248"
+        },
+        {
           "internalType": "bool",
-          "name": "",
+          "name": "revealed",
           "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "bidVal",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "commitmentOf",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "tenderId",
+          "type": "uint256"
+        }
+      ],
+      "name": "determineWinner",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "failedRevealLimit",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "failedRevealWindow",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -293,6 +520,11 @@
                   "type": "uint256"
                 },
                 {
+                  "internalType": "uint256",
+                  "name": "deliveryDate",
+                  "type": "uint256"
+                },
+                {
                   "internalType": "string",
                   "name": "addr",
                   "type": "string"
@@ -323,19 +555,9 @@
                   "type": "uint256"
                 },
                 {
-                  "internalType": "uint256",
-                  "name": "penalty",
-                  "type": "uint256"
-                },
-                {
                   "internalType": "address[]",
                   "name": "bidders",
                   "type": "address[]"
-                },
-                {
-                  "internalType": "uint256[]",
-                  "name": "bidHashArray",
-                  "type": "uint256[]"
                 },
                 {
                   "internalType": "uint256",
@@ -393,8 +615,51 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        }
+      ],
+      "name": "getFailedReveals",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        }
+      ],
+      "name": "isSuspended",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "timeLimit",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "revealTime",
           "type": "uint256"
         },
         {
@@ -421,11 +686,6 @@
           "internalType": "string",
           "name": "zipcode",
           "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "penalty",
-          "type": "uint256"
         },
         {
           "internalType": "string",
@@ -489,12 +749,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "salt",
-          "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "index",
+          "name": "nonce",
           "type": "uint256"
         }
       ],
@@ -511,9 +766,9 @@
           "type": "uint256"
         },
         {
-          "internalType": "uint256",
-          "name": "bidHashedAmount",
-          "type": "uint256"
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
         }
       ],
       "name": "secretBid",
@@ -524,7 +779,62 @@
           "type": "uint256"
         }
       ],
-      "stateMutability": "payable",
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "limit",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "window",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "suspension",
+          "type": "uint256"
+        }
+      ],
+      "name": "setRevealPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "suspendedUntil",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "suspensionPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -570,6 +880,11 @@
               "type": "uint256"
             },
             {
+              "internalType": "uint256",
+              "name": "deliveryDate",
+              "type": "uint256"
+            },
+            {
               "internalType": "string",
               "name": "addr",
               "type": "string"
@@ -600,19 +915,9 @@
               "type": "uint256"
             },
             {
-              "internalType": "uint256",
-              "name": "penalty",
-              "type": "uint256"
-            },
-            {
               "internalType": "address[]",
               "name": "bidders",
               "type": "address[]"
-            },
-            {
-              "internalType": "uint256[]",
-              "name": "bidHashArray",
-              "type": "uint256[]"
             },
             {
               "internalType": "uint256",
@@ -652,19 +957,6 @@
         }
       ],
       "name": "verifyDelivery",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tenderId",
-          "type": "uint256"
-        }
-      ],
-      "name": "withdrawDeposit",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

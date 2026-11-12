@@ -46,8 +46,8 @@ Each deployer needs gas money on its own network. Faucets as of November 2026:
 | Fuji | https://build.avax.network/console/primary-network/faucet | needs a Builder Hub account |
 
 Rough needs: Sepolia and Fuji a negligible amount (gas there is nearly free);
-Amoy about 0.37 POL at 30 gwei (deployment 0.18 POL, role funding 0.19 POL, of
-which one end-to-end run burns about 0.13 POL).
+Amoy about 0.4 POL at 33 gwei (deployment 0.22 POL, role funding up to 0.19
+POL, of which one end-to-end run burns about 0.13 POL).
 
 ## 3. Test locally (optional, no funds needed)
 
@@ -56,8 +56,12 @@ node local-test.js
 ```
 
 Runs the contracts' unit tests on an in-memory chain where time can be moved
-forward instantly: lowest revealed bid wins, single penalty deposit, deposit
-refunds, on-time and late payouts, reclaim after the due date.
+forward instantly: what a sealed bid's commitment binds, the commit / reveal /
+winner-determination deadlines to the second, lowest revealed bid wins whatever
+the order of the reveals, retraction only before the commit deadline, the
+record of failed reveals and the suspension it leads to, payouts, the
+confirmation time recorded for on-time and late deliveries, reclaim after the
+due date.
 
 ## 4. Deploy
 
@@ -81,14 +85,21 @@ node e2e.js <network>
 ```
 
 `fund-roles.js` tops the role accounts up from the deployer (amounts per
-network are in `networks.js`). `e2e.js` registers the roles, then runs four
-tenders through every contract function: lowest bid wins and is delivered on
-time, a job that is never delivered and gets reclaimed, a retracted tender, and
-a late delivery. It checks every payout and deposit refund, confirms the
-contract holds nothing from the run at the end, and prints the gas used per
-call. It takes about four minutes, refuses to start if a role account is low
-on funds, and finishes by running `sync-db.js`, which gives the tenders and
-role accounts it created matching rows in the Dapp's local database.
+network are in `networks.js`). `e2e.js` registers the roles, then runs five
+tenders through every contract function: lowest bid wins (winner determination
+triggered by a bystander) and is delivered on time, a bid that is never
+revealed (recorded, and the provider suspended from bidding), a job that is
+never delivered and gets reclaimed, a tender retracted during bidding, a late
+delivery, and a tender nobody bids on. It checks the deadlines, every payout,
+that the contract records when each delivery was confirmed (before the due date
+for the on-time one, after it for the late one, and none for the reclaimed
+job), confirms the contract holds nothing from the run at the end, and prints
+the gas used per call. For the length of the run it sets a strict reveal policy (one
+failed reveal suspends for a minute or less) and restores the previous one
+afterwards; each run leaves one failed reveal on `transport2`'s record. It
+takes about seven minutes, refuses to start if a role account is low on funds,
+and finishes by running `sync-db.js`, which gives the tenders and role accounts
+it created matching rows in the Dapp's local database.
 
 To give every dashboard of the Dapp something to show, fill the deployment
 with demo data afterwards:
@@ -102,7 +113,10 @@ tenders that stay open for weeks (some with sealed bids from the two transport
 accounts), runs some auctions to "in progress" with delivery dates weeks away,
 delivers two, and writes the matching patient records and bid nonces to the
 local database. Addresses, organisations, injuries and amounts are made up at
-random (`sample-data.js`).
+random (`sample-data.js`). It also sets a reveal policy suited to a shared demo
+(three failed reveals within 30 days suspend a provider for one hour; the
+contract's own default suspension is 30 days). Admins can change the policy on
+the Admin page, under Transports.
 
 ## 6. Run the Dapp
 

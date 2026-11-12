@@ -10,6 +10,15 @@ const {
 } = require("@openzeppelin/test-helpers");
 const BigNumber = require("bignumber.js");
 
+// the commitment that seals a bid (same value as Auctions.commitmentOf)
+const commitmentOf = (tenderId, bidder, bidVal, nonce) =>
+  web3.utils.keccak256(
+    web3.eth.abi.encodeParameters(
+      ["uint256", "address", "uint256", "uint256"],
+      [tenderId, bidder, bidVal, nonce]
+    )
+  );
+
 contract("Accounts", (accounts) => {
   it("gets API latency times of Accounts API functions", async () => {
     const accountsInstance = await Accounts.deployed();
@@ -109,7 +118,7 @@ contract("Auctions", async (accounts) => {
     const fs = require("fs");
 
     let auctionStr =
-      "postTender, secretBid, revealBid, getAuctionWinner, verifyDelivery, reclaimTender, retractTender, getAllTenders\n";
+      "postTender, secretBid, revealBid, determineWinner, getAuctionWinner, verifyDelivery, reclaimTender, retractTender, getAllTenders\n";
 
     // add accounts to be used
     await accountsInstance.addAdmin(accounts[1], { from: accounts[0] });
@@ -124,11 +133,11 @@ contract("Auctions", async (accounts) => {
       let tenderId = await auctionsInstance.postTender(
         30,
         60,
+        60,
         "6729 old stagecoach road",
         "frazeysburg",
         "ohio",
         "43822",
-        20,
         "critical",
         [accounts[3]],
         { from: accounts[2], value: 10000 }
@@ -143,28 +152,39 @@ contract("Auctions", async (accounts) => {
       // let retractTime = (Date.now() - retractStart).toString();
       // auctionStr += retractTime + ",";
 
-      let hash = web3.utils.soliditySha3(100 + 10);
+      let hash = commitmentOf(i, accounts[4], 100, 10);
       let bidStart = Date.now();
-      let bidId = await auctionsInstance.secretBid.call(
-        web3.utils.toBN(i),
-        hash,
-        { from: accounts[4], value: web3.utils.toBN(20) }
-      );
+      await auctionsInstance.secretBid.call(web3.utils.toBN(i), hash, {
+        from: accounts[4],
+      });
       let bidTime = (Date.now() - bidStart).toString();
       auctionStr += bidTime + ",";
+
+      // the call above only simulates the bid: place it, so it can be revealed
+      await auctionsInstance.secretBid(web3.utils.toBN(i), hash, {
+        from: accounts[4],
+      });
 
       await time.increase(time.duration.minutes(1));
 
       let revStart = Date.now();
-      await auctionsInstance.revealBid(web3.utils.toBN(i), 100, 10, bidId, {
+      await auctionsInstance.revealBid(web3.utils.toBN(i), 100, 10, {
         from: accounts[4],
-        value: 20,
       });
 
       let revTime = (Date.now() - revStart).toString();
       auctionStr += revTime + ",";
 
-      await time.increase(time.duration.minutes(5)); // Increase time by 1 minute
+      await time.increase(time.duration.minutes(5)); // past the reveal period
+
+      // anyone may trigger winner determination once the reveal period is over
+      let determineStart = Date.now();
+      await auctionsInstance.determineWinner(web3.utils.toBN(i), {
+        from: accounts[5],
+      });
+      let determineTime = (Date.now() - determineStart).toString();
+      auctionStr += determineTime + ",";
+
       let getWinnerStart = Date.now();
       await auctionsInstance.getAuctionWinner(web3.utils.toBN(i));
       let getWinnerTime = (Date.now() - getWinnerStart).toString();
@@ -179,34 +199,33 @@ contract("Auctions", async (accounts) => {
       await auctionsInstance.postTender(
         30,
         60,
+        60,
         "6729 old stagecoach road",
         "frazeysburg",
         "ohio",
         "43822",
-        20,
         "critical",
         [accounts[3]],
         { from: accounts[2], value: 10000 }
       );
 
-      let bidId2 = await auctionsInstance.secretBid.call(
+      await auctionsInstance.secretBid(
         web3.utils.toBN(i + 1),
-        hash,
-        { from: accounts[4], value: web3.utils.toBN(20) }
+        commitmentOf(i + 1, accounts[4], 100, 10),
+        { from: accounts[4] }
       );
 
       await time.increase(time.duration.minutes(1));
 
-      await auctionsInstance.revealBid(
-        web3.utils.toBN(i + 1),
-        100,
-        10,
-        bidId2,
-        {
-          from: accounts[4],
-          value: 20,
-        }
-      );
+      await auctionsInstance.revealBid(web3.utils.toBN(i + 1), 100, 10, {
+        from: accounts[4],
+      });
+
+      // a tender can be reclaimed once it has a winner and its delivery is overdue
+      await time.increase(time.duration.minutes(5));
+      await auctionsInstance.determineWinner(web3.utils.toBN(i + 1), {
+        from: accounts[5],
+      });
 
       let reclaimStart = Date.now();
       await auctionsInstance.reclaimTender.call(i + 1, { from: accounts[2] });
@@ -217,11 +236,11 @@ contract("Auctions", async (accounts) => {
       await auctionsInstance.postTender(
         30,
         60,
+        60,
         "6729 old stagecoach road",
         "frazeysburg",
         "ohio",
         "43822",
-        20,
         "critical",
         [accounts[3]],
         { from: accounts[2], value: 10000 }

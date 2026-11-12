@@ -25,12 +25,6 @@ const columns = [
     resizable: true,
   },
   {
-    field: "penalty",
-    headerName: "Penalty Amount",
-    width: 125,
-    sortable: false,
-  },
-  {
     field: "revealDate",
     headerName: "Reveal Date",
     width: 175,
@@ -47,7 +41,6 @@ const columns = [
 export default function SaltsDataGrid({ accountId }) {
   const [rowPopup, setRowPopup] = useState(false);
   const [tenderID, setTenderID] = useState();
-  const [penaltyAmt, setPenaltyAmt] = useState();
   const [saltVal, setSaltVal] = useState();
   const [proposedBidVal, setProposedBidVal] = useState();
   const [salts, setSalts] = useState();
@@ -120,7 +113,6 @@ export default function SaltsDataGrid({ accountId }) {
           console.log(row["row"].fullAddress);
           setFullAddress(row["row"].fullAddress);
           setTenderID(row["row"].patientId);
-          setPenaltyAmt(row["row"].penalty);
           setProposedBidVal(row["row"].bidVal);
           setBidId(row["row"].bidId);
           setSaltVal(row["row"].saltVal);
@@ -154,7 +146,6 @@ export default function SaltsDataGrid({ accountId }) {
       <Popup trigger={rowPopup} setTrigger={setRowPopup}>
         <RevealBid
           tenderId={tenderID}
-          penaltyAmt={penaltyAmt}
           bidId={bidId}
           saltVal={saltVal}
           proposedBidVal={proposedBidVal}

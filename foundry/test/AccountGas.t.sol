@@ -23,8 +23,8 @@ contract AuctionGasTest is Test {
     // tender post variables
     uint256 tender;
     uint256 timeLimit;
+    uint256 revealTime;
     uint256 deliveryTime;
-    uint256 penalty;
 
     // bid variables
     uint256 bidVal;
@@ -41,7 +41,8 @@ contract AuctionGasTest is Test {
         InProgress,
         Open,
         Retracted,
-        Reclaimed
+        Reclaimed,
+        Unawarded
     }
 
     // helper struct for tender details
@@ -52,15 +53,15 @@ contract AuctionGasTest is Test {
         uint256 auctionDate;
         uint256 revealDate;
         uint256 dueDate;
+        uint256 deliveryDate;
         string addr;
         string city;
         string state;
+        string zipcode;
         address[] allowedHospitals;
         uint256 maxBid;
-        uint256 penalty;
 
         address[] bidders;
-        uint[] bidHashArray;
         uint256 finalBid;
         string severity;
     }
@@ -88,8 +89,8 @@ contract AuctionGasTest is Test {
 
         // set variables
         timeLimit = 30;
+        revealTime = 300;
         deliveryTime = 10000;
-        penalty = 20;
 
         // set bid variables
         bidVal = 100;

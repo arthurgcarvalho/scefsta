@@ -63,17 +63,17 @@ export default function TenderForm(props) {
   const [severity, setSeverity] = useState("");
   const [mechanismofInjury, setMechanismOfInjury] = useState([]);
   const [tenderAmt, setTenderAmt] = useState();
-  const [penaltyAmt, setPenaltyAmt] = useState();
   const [auctionLength, setAuctionLength] = useState();
+  const [revealLength, setRevealLength] = useState();
   const [deliveryTime, setDeliveryTime] = useState();
   const [location, setLocation] = useState("");
   const [stateIn, setStateIn] = useState("");
   const [city, setCity] = useState("");
   const [zipcode, setZipcode] = useState("");
   const [isAuctionValid, setIsAuctionValid] = useState(true);
+  const [isRevealValid, setIsRevealValid] = useState(true);
   const [isDeliveryValid, setIsDeliveryValid] = useState(true);
   const [isPaymentValid, setIsPaymentValid] = useState(true);
-  const [isPenaltyValid, setIsPenaltyValid] = useState(true);
 
   const [allowedHospPopup, setAllowedHospPopup] = useState(false);
   const [allowedHospitals, setAllowedHospitals] = useState([]);
@@ -167,9 +167,9 @@ export default function TenderForm(props) {
     } else if (fieldName === "payment") {
       setIsPaymentValid(verifyNumber(fieldValue));
       setTenderAmt(fieldValue);
-    } else if (fieldName === "penalty") {
-      setIsPenaltyValid(verifyNumber(fieldValue));
-      setPenaltyAmt(fieldValue);
+    } else if (fieldName === "reveal") {
+      setIsRevealValid(verifyNumber(fieldValue));
+      setRevealLength(fieldValue);
     }
   };
 
@@ -187,9 +187,9 @@ export default function TenderForm(props) {
   };
 
   // auctionLength - how long in minutes the ambulnaces have to bid in the auction
+  // revealLength - how long in minutes they then have to reveal their bids
   // location - the location of the incident
   // allowed hospitals - hospitals that are near enough to service patient(s)
-  // penalty - cost for ambulance if job is not completed
   const confirm = async (event) => {
     event.preventDefault();
     //create tender for blockchain
@@ -206,11 +206,18 @@ export default function TenderForm(props) {
     }
 
     let auctionSec = auctionLength * 60;
+    let revealSec = revealLength * 60;
     let deliverySec = deliveryTime * 60;
+
+    if (!(auctionSec > 0) || !(revealSec > 0)) {
+      alert("The auction length and the reveal period must be at least 1 minute");
+      return;
+    }
 
     // if the selection is date time perform check, if not run smart contract call
     if (dateTimeIsValid) {
-      let inputDeliveryTime = deliverySec - auctionSec - 300;
+      // the contract counts the delivery time from the end of the reveal period
+      let inputDeliveryTime = deliverySec - auctionSec - revealSec;
 
       if (inputDeliveryTime <= 600) {
         alert("Delivery time is not far enough from the end auction date");
@@ -219,12 +226,12 @@ export default function TenderForm(props) {
 
       send1(
         auctionSec,
+        revealSec,
         inputDeliveryTime,
         location,
         city,
         stateIn,
         zipcode,
-        penaltyAmt,
         severity,
         allowedHospitals,
         { value: tenderAmt }
@@ -232,12 +239,12 @@ export default function TenderForm(props) {
     } else {
       send1(
         auctionSec,
+        revealSec,
         deliverySec,
         location,
         city,
         stateIn,
         zipcode,
-        penaltyAmt,
         severity,
         allowedHospitals,
         { value: tenderAmt }
@@ -385,127 +392,87 @@ export default function TenderForm(props) {
           <FormInput />
           <h2 className={styles.headingText}>Auction Information</h2>
           <div style={{ display: "flex", justifyContent: "space-around" }}>
-        <div className={styles.dropdownDiv}>
-          <TextField
-            type="text"
-            name="payment"
-            label="Payment Amount (WEI)"
-            variant="standard"
-            className={stylesP.formInput}
-            required
-            value={tenderAmt}
-            onChange={handleAddFormData}
-            error={!isPaymentValid}
-            helperText={!isPaymentValid && "Please enter a valid amount in WEI"}
-          />
-        </div>
-        <div className={styles.dropdownDiv}>
-          <TextField
-            type="text"
-            name="penalty"
-            label="Penalty Amount (WEI)"
-            variant="standard"
-            placeholder="5"
-            className={stylesP.formInput}
-            required
-            value={penaltyAmt}
-            onChange={handleAddFormData}
-            error={!isPenaltyValid}
-            helperText={!isPenaltyValid && "Please enter a valid amount in WEI"}
-          />
-        </div>
-      </div>
-          {(function () {
-                if (type === "emergency") {
-                  return (
-                    <div style={{ display: "flex", justifyContent: "space-around" }}>
-                       return (
-      <div className={styles.dropdownDiv}>
-        <TextField
-          type="text"
-          name="auction"
-          label="Auction Length (Minutes)"
-          variant="standard"
-          placeholder="5"
-          className={stylesP.formInput}
-          required
-          value={auctionLength}
-          onChange={handleAddFormData}
-          error={!isAuctionValid}
-          helperText={
-            !isAuctionValid && "Please enter a valid time length in minutes"
-          }
-        />
-      </div>
-    );
-                      {value === 0 &&  <div className={styles.dropdownDiv}>
-        <TextField
-          type="text"
-          name="delivery"
-          label="Delivery Time (min)"
-          variant="standard"
-          placeholder="30"
-          className={stylesP.formInput}
-          required={value === 0}
-          value={deliveryTime}
-          onChange={handleAddFormData}
-          error={!isDeliveryValid}
-          helperText={
-            !isDeliveryValid && "Please enter a valid time length in minutes"
-          }
-        />
-      </div>}
-                    </div>
-                  );
-                } else if (type === "private" || type === "facility") {
-                  return (
-                    <div style={{ display: "flex", justifyContent: "space-around" }}>
-      <div className={styles.dropdownDiv}>
-        <TextField
-          type="text"
-          name="auction"
-          label="Auction Length (Minutes)"
-          variant="standard"
-          placeholder="5"
-          className={stylesP.formInput}
-          required
-          value={auctionLength}
-          onChange={handleAddFormData}
-          error={!isAuctionValid}
-          helperText={
-            !isAuctionValid && "Please enter a valid time length in minutes"
-          }
-        />
-      </div>
-                      {value === 0 ? (
-                         <div className={styles.dropdownDiv}>
-                         <TextField
-                           type="text"
-                           name="delivery"
-                           label="Delivery Time (min)"
-                           variant="standard"
-                           placeholder="30"
-                           className={stylesP.formInput}
-                           required={value === 0}
-                           value={deliveryTime}
-                           onChange={handleAddFormData}
-                           error={!isDeliveryValid}
-                           helperText={
-                             !isDeliveryValid && "Please enter a valid time length in minutes"
-                           }
-                         />
-                       </div>
-                      ) : (
-                        <DateTimePicker
-                          className={styles.dateTimeFacility}
-                          value={dateTime}
-                          onChange={(newValue) => handleDateTime(newValue)}
-                        />
-                      )}
-                    </div>
-                  );
+            <div className={styles.dropdownDiv}>
+              <TextField
+                type="text"
+                name="payment"
+                label="Payment Amount (WEI)"
+                variant="standard"
+                className={stylesP.formInput}
+                required
+                value={tenderAmt}
+                onChange={handleAddFormData}
+                error={!isPaymentValid}
+                helperText={
+                  !isPaymentValid && "Please enter a valid amount in WEI"
                 }
-          })()}
+              />
+            </div>
+            <div className={styles.dropdownDiv}>
+              <TextField
+                type="text"
+                name="auction"
+                label="Auction Length (Minutes)"
+                variant="standard"
+                placeholder="5"
+                className={stylesP.formInput}
+                required
+                value={auctionLength}
+                onChange={handleAddFormData}
+                error={!isAuctionValid}
+                helperText={
+                  !isAuctionValid &&
+                  "Please enter a valid time length in minutes"
+                }
+              />
+            </div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-around" }}>
+            <div className={styles.dropdownDiv}>
+              <TextField
+                type="text"
+                name="reveal"
+                label="Reveal Period (Minutes)"
+                variant="standard"
+                placeholder="5"
+                className={stylesP.formInput}
+                required
+                value={revealLength}
+                onChange={handleAddFormData}
+                error={!isRevealValid}
+                helperText={
+                  !isRevealValid &&
+                  "Please enter a valid time length in minutes"
+                }
+              />
+            </div>
+            {value === 0 ? (
+              <div className={styles.dropdownDiv}>
+                <TextField
+                  type="text"
+                  name="delivery"
+                  label="Delivery Time (min)"
+                  variant="standard"
+                  placeholder="30"
+                  className={stylesP.formInput}
+                  required={value === 0}
+                  value={deliveryTime}
+                  onChange={handleAddFormData}
+                  error={!isDeliveryValid}
+                  helperText={
+                    !isDeliveryValid &&
+                    "Please enter a valid time length in minutes"
+                  }
+                />
+              </div>
+            ) : (
+              <DateTimePicker
+                className={styles.dateTimeFacility}
+                value={dateTime}
+                onChange={(newValue) => handleDateTime(newValue)}
+              />
+            )}
+          </div>
           <div className={styles.buttonGroup}>
             <ButtonGroup variant="contained" aria-label="outlined button group">
               <Button disabled={confirmDisabled} color="success" type="submit">

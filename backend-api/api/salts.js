@@ -7,11 +7,12 @@ async function addSalt(req, res, connection) {
   let bidId = req.body.bidId;
   let saltVal = req.body.saltVal;
   let bidVal = req.body.bidVal;
-  let penalty = req.body.penalty;
 
+  // saltVal is the 256-bit nonce as a hexadecimal string and bidVal the bid in
+  // wei as a decimal string: both are too large for a number column
   let query = `INSERT INTO ${Constants.Salts} (${Constants.walletId}, ${Constants.patientId}, ${Constants.bidId},
-        ${Constants.saltVal}, ${Constants.bidVal}, ${Constants.penalty})
-        VALUES ('${walletId}', '${patientId}', '${bidId}', '${saltVal}', '${bidVal}', '${penalty}');`;
+        ${Constants.saltVal}, ${Constants.bidVal})
+        VALUES ('${walletId}', '${patientId}', '${bidId}', '${saltVal}', '${bidVal}');`;
 
   connection.query(query, (err, results) => {
     if (err) {

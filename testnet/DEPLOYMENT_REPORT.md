@@ -1,10 +1,208 @@
-# Testnet deployment report — 9–10 November 2026
+# Testnet deployment report — 9–12 November 2026
 
-The contracts were deployed twice. The first deployment was the unmodified
-source; it exposed the contract problems listed in "Contract fixes" below. The
-second deployment, with those fixed, is the current one.
+The contracts went through three versions. The first deployment (9 November)
+was the unmodified source; it exposed the contract problems listed in
+"Contract fixes" below. The second (10 November) fixed those. The third
+(12 November) changed the auction rules to match the threat model described in
+the paper and removed the penalty. A small addition later the same day made
+the contract record when each delivery is confirmed, which meant deploying
+once more; that final deployment is the current one on all three networks, and
+the addresses, test counts and gas figures in the first section are its own.
+The sections after it are the 9–10 November record and are out of date
+wherever they mention penalties, deposits or the order of reveals.
 
-## Deployed contracts (current: fixed version)
+## 12 November 2026: auction rules aligned with the paper's threat model
+
+### What changed in `Auctions.sol`
+
+| Topic | 10 November version | Now |
+| --- | --- | --- |
+| Commitment | `keccak256(bid + nonce)`: a hash of the sum, so one commitment opened to any bid, and it could be copied by another bidder. Nonce of 48 bits | `keccak256(abi.encode(tenderId, bidder, bid, nonce))` with a 256-bit nonce (`commitmentOf`). A commitment opens to one bid only, for one bidder, on one tender |
+| Periods | Hirer chose the bidding period; the reveal period was a constant (60 s) | `postTender(timeLimit, revealTime, deliveryTime, …)`: the hirer sets both. Commitments while `t < tc`, reveals while `tc <= t < tr`, by block timestamp |
+| Winner | A running lowest bid updated by every reveal; the earlier reveal won a tie | `revealBid` only records the bid. `determineWinner(tenderId)`, callable by anyone once `t >= tr`, picks the lowest revealed bid; a tie goes to the earlier commitment. The order of reveals has no effect |
+| Not revealing | No consequence | Recorded per address at winner determination (`getFailedReveals`, event `RevealFailed`). `failedRevealLimit` failed reveals within `failedRevealWindow` suspend the address for `suspensionPeriod` (`suspendedUntil`, `isSuspended`); `secretBid` rejects a suspended address. Defaults 3 / 30 days / 30 days; admins change them with `setRevealPolicy` |
+| Retraction | Allowed until the first reveal landed, with no time limit | Only while `t < tc` |
+| No valid reveal | Tender stayed open; the hirer had to retract it | `determineWinner` closes it as `Unawarded` (new status 5) and refunds the hirer |
+| Penalty | Every bidder deposited the tender's penalty with the bid; refunded to non-winners, paid to the hirer on a late or missing delivery | Removed. Nobody deposits anything. A delivery is paid the bid whether on time or late; an undelivered job can be reclaimed after the due date, as before |
+| Delivery record | Confirming a delivery only closed the tender; when it was confirmed was not stored, so a late delivery looked like any other | `verifyDelivery` stores the block time in the tender (`deliveryDate`, right after `dueDate`; zero until then) and emits `DeliveryVerified(tenderId, provider, deliveryDate, dueDate)`. A delivery was late if `deliveryDate > dueDate`. A missed delivery is a `Reclaimed` tender: it keeps the winning provider's address and has no delivery time |
+
+Interface changes for anything that calls the contracts: `postTender` has a
+`revealTime` argument and no `penalty`; `secretBid(uint256, bytes32)` and
+`revealBid(uint256 tenderId, uint256 bid, uint256 nonce)` are not payable and
+the reveal takes no bid index; `determineWinner`, `commitmentOf`,
+`setRevealPolicy`, `getFailedReveals`, `isSuspended`, `suspendedUntil`, `bids`
+and the three policy getters are new; `withdrawDeposit`, `depositHeld`, the
+`penalty` and `bidHashArray` tender fields are gone; the tender details have a
+new `deliveryDate` field after `dueDate`, and the `DeliveryVerified` event is
+new.
+
+Two things about late and missed deliveries are as they were. Once the due
+date has passed, the hirer may reclaim and the facility may still confirm: the
+late provider is paid in full only if the confirmation is mined before a
+reclaim. And nothing removes a provider automatically: the record is there for
+an administrator, who removes a provider from the registry by hand (Admin
+page, Transports).
+
+Not changed: the bid and its nonce are still saved in the backend database
+when a bid is placed (table `Salts`, now as text: a 256-bit nonce does not fit
+a number column), and the API that returns them still asks for no sign-in.
+
+### Deployed contracts (current)
+
+| Network | Contract | Address |
+| --- | --- | --- |
+| Ethereum Sepolia | Accounts | [`0xEF2486576172193Ae9a407ee2A7d8424E8c1B615`](https://sepolia.etherscan.io/address/0xEF2486576172193Ae9a407ee2A7d8424E8c1B615) |
+| Ethereum Sepolia | Auctions | [`0x617435AB5aDb401E2BCb90F7Ff06e8785Ed67f92`](https://sepolia.etherscan.io/address/0x617435AB5aDb401E2BCb90F7Ff06e8785Ed67f92) |
+| Avalanche Fuji | Accounts | [`0x761A33762092E51f2CdaaF9A34543dD24EFD11D3`](https://testnet.snowtrace.io/address/0x761A33762092E51f2CdaaF9A34543dD24EFD11D3) |
+| Avalanche Fuji | Auctions | [`0xA8e64e2568F0088d73209148a4D6462f0b6ED094`](https://testnet.snowtrace.io/address/0xA8e64e2568F0088d73209148a4D6462f0b6ED094) |
+| Polygon Amoy | Accounts | [`0x6826734bCB9eA591Eb7018f30B8ce2f5a470a1F4`](https://amoy.polygonscan.com/address/0x6826734bCB9eA591Eb7018f30B8ce2f5a470a1F4) |
+| Polygon Amoy | Auctions | [`0xa67993678d19753F8fDa84159887D492e8041BCB`](https://amoy.polygonscan.com/address/0xa67993678d19753F8fDa84159887D492e8041BCB) |
+
+The first deployment of 12 November, the same contracts without the delivery
+record, is superseded: Auctions at `0x255b9c373b407245293788A6AAf86d891c71D15e`
+on Sepolia and `0xB1E17855eEC6D6f83f9548112A694414CF8760f3` on Fuji (listed
+under `previous` in `deployments.json`). It was never on Amoy.
+
+Amoy was deployed last, after a faucet claim: its deployer held about 0.06 POL
+and the two deployments cost 0.22 POL at 33 gwei. Until then it carried the
+10 November contracts. All tenders from its test run are settled, the contract
+holds nothing and the failed-reveal rule is at its default.
+
+### What was tested
+
+**Local unit tests, `node local-test.js` — 17/17 pass.** In-memory chain with
+time travel: what a commitment binds (changed bid with shifted nonce, copied
+commitment, reuse on another tender: all rejected); commit accepted at
+`tc - 1` and rejected at `tc`; reveal accepted at exactly `tc` and at
+`tr - 1`, rejected at `tr`; winner determination rejected at `tr - 1` and
+accepted at exactly `tr`; lowest bid wins in either reveal order and whoever
+triggers the determination; equal bids go to the earlier commitment in either
+reveal order; retraction only before `tc`; unawarded tender and refund; failed
+reveals recorded and public; suspension at the limit, bidding blocked until it
+ends, failed reveals outside the rolling window not counted; payouts with
+nothing deposited; the confirmation time recorded in the tender and in the
+event, on or before the due date for an on-time delivery and after it for a
+late one that is still paid in full; reclaim only after the due date, leaving
+the provider's address and no delivery time on the tender.
+
+**Live check, `node e2e.js <network>` — passes on Sepolia, Fuji and Amoy** (83
+transactions and checks on Sepolia and Fuji, 12 of them calls that must be
+rejected; 84 and 13 on Amoy, where one more optional check had time to run). Five tenders per run: A
+(both reveal; a bystander determines the winner; lowest wins; delivered on
+time, with a confirmation time not after the due date), B (one bidder never
+reveals: failed reveal recorded, provider suspended and turned away by
+`secretBid`, later free to bid again; job never delivered; reclaimed, the
+tender keeping the provider's address and no delivery time), C (retracted
+during bidding), D (late delivery, still paid, with a confirmation time after
+the due date), E (no bid: unawarded, hirer refunded). Every payout is checked
+to the wei and the run ends with the contract holding nothing from it. Each
+run leaves one failed reveal on `transport2`'s record and one late and one
+missed delivery on `transport1`'s.
+
+**Foundry and Truffle tests** (`foundry/test`, `truffle/test`) were updated
+to the new interface and seven Foundry tests were added. The Foundry tests
+compile with solc 0.8.21; **neither suite was run**, because Foundry and
+Truffle are not installed on this machine.
+
+**The delivery record in the Dapp**, in the browser with the dev wallet,
+against the current Fuji contracts (tenders 0 to 5 there):
+
+| Step | Role | Result |
+| --- | --- | --- |
+| Tender Dashboard: new "Delivery Confirmed" column, right after "Delivery Due Date" | initiator | The on-time tender shows its confirmation time; the late one shows the time followed by "(late)"; the reclaimed one shows "Not delivered"; the retracted and unawarded ones are blank |
+| Admin page, Transports: new "Late Deliveries" and "Missed Deliveries" columns, next to the failed reveals | superAdmin | transport1: 1 late, 1 missed, 0 failed reveals; transport2: 0, 0 and 1 failed reveal, as the e2e run left them |
+| Accepted Patients: new "Delivery Confirmed" column | facility | Same times as on the hirer's list, the late one marked "(late)"; the pending and incoming lists do not have the column |
+| Confirm the arrival of a patient whose tender is in progress (tender 5) | facility | Mined; "Patient successfully verified! Funds have been transferred!"; the patient moved to Accepted Patients with its confirmation time, about half an hour before the due date |
+
+The transport pages and the bid, reveal and winner popups were not driven
+again: their code did not change after the checks below.
+
+**Through the Dapp, the auction rules**, checked the same way earlier on 12
+November against that day's first Fuji deployment (tenders 5 to 7 there),
+whose contract differs from the current one only in not recording the delivery
+time:
+
+| Step | Role | Result |
+| --- | --- | --- |
+| Post a tender with the changed form (no penalty field; new "Reveal Period (Minutes)" field: auction 4 min, reveal 3 min) | initiator | Mined; on chain the reveal deadline is 180 s after the commit deadline |
+| Place sealed bids of 90000 and 80000 wei on a tender | transport1, transport2 | Both mined with nothing paid; the 256-bit nonces were saved, and each commitment on chain equals the hash of (tender, bidder, bid, saved nonce) |
+| Retract a tender after its auction end date | initiator | Refused: "Bidding period is over" |
+| "Determine Winner" on a tender nobody bid on, after its reveal date | initiator | Mined; the popup reports that no valid bid was revealed and that the funds were returned; tender `Unawarded` |
+| "Reveal Bid" and "Determine Winner" before their time | transport1 | Refused: "Tender under auction", "Reveal period is not over" |
+| Reveal the 90000 bid during the reveal period; the 80000 bid is left unrevealed | transport1 | Mined; the bid shows as revealed on chain |
+| "Determine Winner" after the reveal date | transport1 | Mined; the popup announces the 90000 bid as the lowest revealed one and that this account won |
+| Admin page, Transports: set the rule to 1 failed reveal / 1 h / 0.1 h beforehand, and back to 3 / 720 h / 720 h afterwards | superAdmin | Both mined; the table shows 2 failed reveals and a "Suspended Until" time for transport2, 0 for transport1 |
+| Place a bid while suspended | transport2 | Refused in the form: "This account is suspended from bidding until …" |
+| Confirm the patient's arrival | facility | Mined; winner paid, tender `Closed` |
+
+Not driven in the browser: the reclaim popup and the "Tenders In Progress"
+winner check (their code changed only in the wording of messages), and
+MetaMask (the dev wallet was used throughout). These steps were run on the
+development server. On the current Fuji contracts every tender is settled (the
+contract holds nothing) and the rule is at its default; `transport2` has one
+failed reveal on record there, `transport1` one late and one missed delivery.
+
+### Hosted copy (Cloud Run, Sepolia)
+
+Redeployed twice on 12 November with `node cloudrun/deploy.js`, once per
+Sepolia deployment (now revision `scefsta-00007-dlz`, same address and access
+setting as before). It runs against the current Sepolia contracts and started
+from a fresh database, filled with `node e2e.js sepolia` and
+`node seed-demo.js sepolia` before the upload: 16 tenders (six open, with
+auctions closing between 19 November and 27 December 2026 and one-day reveal
+periods; three in progress, due by 12 December; four delivered, one of them
+late; one each reclaimed, retracted and unawarded), 17 stored bids, eight
+extra organisations. The seeding script set the failed-reveal rule there to
+three failed reveals within 30 days and a **one-hour** suspension, so that a
+shared demo with two provider accounts cannot be locked for a month. From the
+e2e run, `transport2` starts with one failed reveal and `transport1` with one
+late and one missed delivery.
+
+Checked on the hosted copy after the second redeployment: the landing and
+initiator pages answer; the API returns the 16 patient records and the 17
+stored bids (66-character nonces); the page scripts name the current Auctions
+address and not the previous one; in a browser, the initiator dashboard lists
+the 16 tenders with the "Delivery Confirmed" column (a time for the on-time
+delivery, a time marked "(late)" for the late one, "Not delivered" for the
+reclaimed one), and the Admin page's Transports table shows 1 late and 1
+missed delivery for `transport1` and 1 failed reveal for `transport2`. The
+transport dashboard and its popups were checked on the first redeployment and
+not again. No transaction was sent from the hosted copy.
+
+### Gas used (average per call, from the e2e runs)
+
+| Function | Sepolia | Amoy | Fuji | Fuji, 10 November version |
+| --- | ---: | ---: | ---: | ---: |
+| postTender | 1,827,367 | 470,109 | 413,644 | 435,803 |
+| secretBid | 334,075 | 132,515 | 102,553 | 141,978 |
+| revealBid | 151,937 | 99,760 | 69,511 | 76,318 |
+| determineWinner, two reveals | 170,284 | 102,888 | 73,488 | — |
+| determineWinner, one reveal and one failed reveal with suspension | 511,350 | 195,690 | 151,170 | — |
+| determineWinner, no bids (refund) | 53,188 | 68,608 | 49,288 | — |
+| verifyDelivery | 179,818 | 129,514 | 96,514 | 81,588 |
+| reclaimTender | 48,310 | 64,130 | 44,810 | 52,458 |
+| retractTender | 46,151 | 58,611 | 42,651 | 40,540 |
+| setRevealPolicy | 63,297 | 54,317 | 47,597 | — |
+| deploy Accounts | 13,232,067 | 1,922,209 | 1,905,409 | 1,905,409 |
+| deploy Auctions | 33,329,435 | 4,707,439 | 4,701,559 | 4,028,587 |
+
+At Amoy's gas price that day (33 gwei) the calls cost between 0.002 POL
+(retract, reclaim) and 0.016 POL (posting a tender); confirming a delivery
+cost 0.0043 POL, and the two deployments 0.22 POL. On Sepolia and Fuji the
+fees were a negligible fraction of a cent.
+
+Recording the delivery time is what `verifyDelivery` pays for: before it, the
+call used 65,040 gas on Sepolia and 69,656 on Fuji. The addition is one new
+storage slot and one event, about 27,000 gas on Fuji and about 115,000 on
+Sepolia, where a new storage slot is priced far higher (the same gap shows in
+`secretBid` and `postTender`).
+
+`determineWinner` loops over the tender's bidders, so its cost grows with
+their number: on the local chain, about 115,000 gas for ten revealed bids.
+The figures in the paper's Table 6 were measured on the original contracts and
+do not describe this version.
+
+## Deployed contracts on 10 November (superseded)
 
 | Network | Contract | Address |
 | --- | --- | --- |
@@ -54,8 +252,9 @@ three networks and hold gas money from each network's deployer.
 
 Funding of the new deployers: 1 POL from https://faucet.polygon.technology and
 0.005 AVAX from https://faucet.zalalena.com/avalanche (both claimed by hand).
-After both deployments and all tests the Amoy deployer holds about 0.06 POL
-(a third deployment there would need another faucet claim); Fuji and Sepolia
+After those two deployments and their tests the Amoy deployer held about 0.06
+POL, so the 12 November deployment there took a second faucet claim of 1 POL;
+after it and its test run the deployer holds about 0.70 POL. Fuji and Sepolia
 have plenty.
 
 ## Contract fixes
@@ -148,6 +347,9 @@ These are whole-transaction gas figures from the receipts. The same call costs
 different amounts on the three testnets, Sepolia most of all.
 
 ## Hosted copy on Google Cloud Run (Sepolia, dev wallet)
+
+*State on 10 November; for the 12 November redeployment see "Hosted copy
+(Cloud Run, Sepolia)" above.*
 
 Deployed on 10 November 2026 with `node cloudrun/deploy.js` (see
 [`../cloudrun/README.md`](../cloudrun/README.md)): project `apps-489516`,

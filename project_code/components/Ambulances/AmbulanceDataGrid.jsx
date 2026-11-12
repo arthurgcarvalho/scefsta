@@ -9,6 +9,8 @@ import stylesP from "../../styles/Popup.module.css";
 import * as Constants from "../../constants";
 import { useContractFunction, transactionErrored } from "@usedapp/core";
 import { ACCOUNT_INSTANCE } from "../../pages/_app";
+import { providers } from "ethers";
+import { getRevealRecord, getDeliveryRecords } from "../../solidityCalls";
 import Box from "@mui/material/Box";
 import Alert from "@mui/material/Alert";
 import { CircularProgress } from "@mui/material";
@@ -32,6 +34,31 @@ const columns = [
   { field: "city", headerName: "City", width: 120, sortable: true },
   { field: "state", headerName: "State", width: 100, sortable: true },
   { field: "zipcode", headerName: "Zipcode", width: 100, sortable: true },
+  // the columns below come from the Auctions contract's public record
+  {
+    field: "lateDeliveries",
+    headerName: "Late Deliveries",
+    width: 135,
+    sortable: true,
+  },
+  {
+    field: "missedDeliveries",
+    headerName: "Missed Deliveries",
+    width: 150,
+    sortable: true,
+  },
+  {
+    field: "failedReveals",
+    headerName: "Failed Reveals",
+    width: 130,
+    sortable: true,
+  },
+  {
+    field: "suspendedUntil",
+    headerName: "Suspended Until",
+    width: 190,
+    sortable: false,
+  },
   { field: "id", headerName: "Wallet ID", width: 400, sortable: false },
 ];
 
@@ -66,6 +93,50 @@ export default function AmbulanceDataGrid({ data, popUpChecked }) {
 
   // Renames the 'walletId' field to 'id'. DataGrid requires an id field
   dataContacts.map((x) => (x["id"] = x["walletId"]));
+
+  // Each provider's late and missed deliveries, failed reveals and suspension,
+  // read from the blockchain
+  const [revealRecords, setRevealRecords] = useState({});
+  const [deliveryRecords, setDeliveryRecords] = useState();
+  useEffect(() => {
+    let cancelled = false;
+    const loadRecords = async () => {
+      const provider = new providers.Web3Provider(window.ethereum);
+      const records = {};
+      const [deliveries] = await Promise.all([
+        getDeliveryRecords(provider),
+        ...dataContacts.map(async (row) => {
+          records[row.walletId] = await getRevealRecord(row.walletId, provider);
+        }),
+      ]);
+      if (!cancelled) {
+        setRevealRecords(records);
+        setDeliveryRecords(deliveries);
+      }
+    };
+    loadRecords();
+    return () => {
+      cancelled = true;
+    };
+  }, [dataContacts.length]);
+
+  const rowsWithRecords = dataContacts.map((row) => {
+    const withRecords = { ...row };
+    if (deliveryRecords) {
+      const deliveries = deliveryRecords[String(row.walletId).toLowerCase()];
+      withRecords.lateDeliveries = deliveries ? deliveries.late : 0;
+      withRecords.missedDeliveries = deliveries ? deliveries.missed : 0;
+    }
+    const record = revealRecords[row.walletId];
+    if (record) {
+      withRecords.failedReveals = record.failedReveals.length;
+      withRecords.suspendedUntil =
+        record.suspendedUntil * 1000 > Date.now()
+          ? new Date(record.suspendedUntil * 1000).toLocaleString()
+          : "";
+    }
+    return withRecords;
+  });
 
   // Used for add button popup
   const [addPopup, setAddPopup] = useState(false);
@@ -218,7 +289,7 @@ export default function AmbulanceDataGrid({ data, popUpChecked }) {
             setDeleteButton(false);
           }
         }}
-        rows={dataContacts}
+        rows={rowsWithRecords}
         columns={columns}
         initialState={{
           sorting: {

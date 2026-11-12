@@ -33,7 +33,7 @@ export default function Patients(pat) {
     
     return (
         <div className={styles.container}>
-            <PatientsDataGrid data={searchTerm.length < 1 ? patients : searchResults} arrival={arrival}/>
+            <PatientsDataGrid data={searchTerm.length < 1 ? patients : searchResults} arrival={arrival} delivered={pat.delivered}/>
         </div>
     );
 }

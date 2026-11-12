@@ -23,13 +23,13 @@ contract AuctionGasTest is Test {
     // tender post variables
     uint256 tender;
     uint256 timeLimit;
+    uint256 revealTime;
     uint256 deliveryTime;
-    uint256 penalty;
 
     // bid variables
     uint256 bidVal;
-    uint256 saltVal;
-    uint256 hashVal;
+    uint256 saltVal; // the secret nonce of the commitment
+    bytes32 hashVal;
 
     // results
     bool res;
@@ -41,7 +41,8 @@ contract AuctionGasTest is Test {
         InProgress,
         Open,
         Retracted,
-        Reclaimed
+        Reclaimed,
+        Unawarded
     }
 
     // helper struct for tender details
@@ -52,15 +53,15 @@ contract AuctionGasTest is Test {
         uint256 auctionDate;
         uint256 revealDate;
         uint256 dueDate;
+        uint256 deliveryDate;
         string addr;
         string city;
         string state;
+        string zipcode;
         address[] allowedHospitals;
         uint256 maxBid;
-        uint256 penalty;
 
         address[] bidders;
-        uint[] bidHashArray;
         uint256 finalBid;
         string severity;
     }
@@ -88,13 +89,12 @@ contract AuctionGasTest is Test {
 
         // set variables
         timeLimit = 30;
+        revealTime = 300;
         deliveryTime = 10000;
-        penalty = 20;
 
         // set bid variables
         bidVal = 100;
         saltVal = 10;
-        hashVal = uint(keccak256(abi.encodePacked(bidVal + saltVal)));
 
         // add new admin
         vm.startPrank(superAdmin);
@@ -114,7 +114,7 @@ contract AuctionGasTest is Test {
         for (uint256 i = 0; i < 100; i++) {
             // auction functions
             hoax(initiator, 100000 ether);
-            tender = auc.postTender{value: 10000}(timeLimit, deliveryTime, "311 Thatcher Loop", "Oxford", "Ohio", "45056", penalty, "High", allowedHospitals);
+            tender = auc.postTender{value: 10000}(timeLimit, revealTime, deliveryTime, "311 Thatcher Loop", "Oxford", "Ohio", "45056", "High", allowedHospitals);
 
             
             /* Do this independenlty of all auction functions below */
@@ -126,14 +126,18 @@ contract AuctionGasTest is Test {
             //auction functions
             auc.getAllTenders();
             
+            // the commitment is computed off-chain: it binds the tender, the bidder, the bid and the nonce
+            hashVal = keccak256(abi.encode(tender, ambulance, bidVal, saltVal));
             hoax(ambulance, 10000 ether);
-            uint bidID = auc.secretBid{value: penalty}(tender, hashVal);
+            auc.secretBid(tender, hashVal);
 
             skip(timeLimit + 10);
             hoax(ambulance, 1000 ether);
-            auc.revealBid(tender, bidVal, saltVal, bidID);
+            auc.revealBid(tender, bidVal, saltVal);
             
-            skip(320);
+            // the winner is determined once the reveal period is over
+            skip(revealTime);
+            auc.determineWinner(tender);
             auc.getAuctionWinner(tender);
 
             /* Do this independently from reclaim tender */

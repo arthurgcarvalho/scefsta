@@ -15,12 +15,19 @@ const columns = [
     { field: "dueDate", headerName: 'Delivery Due', width: 175, sortable: true}
   ];
 
+// when the arrival was confirmed, as recorded by the contract next to the due date
+const deliveredColumns = [
+    ...columns,
+    { field: "deliveryDate", headerName: 'Delivery Confirmed', width: 225, sortable: true}
+  ];
+
 /**
  * Creates the table containing the patients information and populates it with the data.
  * @param {*} data JSON containing the data.
  * @param {*} arrival Boolean -if false, a patient has not arrived and the option to confirm their arrival is given
+ * @param {*} delivered Boolean -if true, the patients have arrived and the table shows when that was confirmed
  */
-export default function PatientsDataGrid({data, arrival}) {
+export default function PatientsDataGrid({data, arrival, delivered}) {
     // allows for the data in the table to be updated (Add/Remove)
     const [dataContacts, setDataContacts] = useState(data);
     const [rowPopup, setRowPopup] = useState(false);
@@ -63,6 +70,7 @@ export default function PatientsDataGrid({data, arrival}) {
                 if (tendId.c[0] + 1 === patient.patientId) {
                     // get the due date
                     patient.dueDate = tempTenders[tender].dueDate;
+                    patient.deliveryDate = tempTenders[tender].deliveryDate;
                 }
             }
             console.log("merged", patient);
@@ -102,7 +110,7 @@ export default function PatientsDataGrid({data, arrival}) {
                     performPopup(row);
                 }}
                 rows={dataContacts}
-                columns={columns}
+                columns={delivered ? deliveredColumns : columns}
                 initialState={{
                     sorting: {
                       sortModel: [{ field: 'username', sort: 'asc' }],

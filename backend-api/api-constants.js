@@ -22,7 +22,6 @@ exports.licensePlate = "licensePlate";
 exports.initiatorType = "initiatorType";
 exports.accountType = "accountType";
 exports.transportCompany = "transportCompany";
-exports.penalty = "penalty";
 exports.severity = "severity";
 
 // patient table variables

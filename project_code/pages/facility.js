@@ -142,7 +142,7 @@ function Hospital() {
                 <Patients data={incoming} arrival={true} />
               </TabPanel>
               <TabPanel value={value} index={2}>
-                <Patients data={accepted} arrival={false} />
+                <Patients data={accepted} arrival={false} delivered={true} />
               </TabPanel>
             </Box>
           </div>

@@ -6,23 +6,23 @@
     "rpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
     "explorer": "https://sepolia.etherscan.io",
     "deployer": "0xbdB61Ada027eF27ef0709D3848Db1Dd13c96F970",
-    "deployedAt": "2026-11-10T14:26:27.688Z",
-    "accountsAddress": "0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1",
-    "auctionsAddress": "0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A",
+    "deployedAt": "2026-11-12T18:46:50.272Z",
+    "accountsAddress": "0xEF2486576172193Ae9a407ee2A7d8424E8c1B615",
+    "auctionsAddress": "0x617435AB5aDb401E2BCb90F7Ff06e8785Ed67f92",
     "transactions": {
       "accounts": {
-        "address": "0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1",
-        "txHash": "0x3388fb86a1cc80f4cf2793536ee200b80b8409abc7b1d7c56cfe33a186a55ed9",
-        "blockNumber": 12105211,
+        "address": "0xEF2486576172193Ae9a407ee2A7d8424E8c1B615",
+        "txHash": "0x79c5f8e7a2f3be73a04480b1d55a8084c14b5c7080636edbe8176c5aeb484877",
+        "blockNumber": 12120712,
         "gasUsed": "13232067",
-        "feePaid": "0.000000000873316422"
+        "feePaid": "0.000000000251409273"
       },
       "auctions": {
-        "address": "0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A",
-        "txHash": "0x1b731f7671610621855cd1e2fe7fd63058eee4bd9d4fcb9254e9be2b6eb05389",
-        "blockNumber": 12105213,
-        "gasUsed": "28656205",
-        "feePaid": "0.00000000189130953"
+        "address": "0x617435AB5aDb401E2BCb90F7Ff06e8785Ed67f92",
+        "txHash": "0x6ba5fb0ff97437dc00ccc3993dc47ec485cf05437df5ad9ce90d368d854ed670",
+        "blockNumber": 12120714,
+        "gasUsed": "33329435",
+        "feePaid": "0.000000000633259265"
       }
     },
     "previous": [
@@ -35,6 +35,16 @@
         "deployedAt": "2026-11-10T04:41:24.883Z",
         "accountsAddress": "0xc3CA7f0Aa0ED37612DcC548743EF6b3422d201Fc",
         "auctionsAddress": "0x38274122442B8bb4d9F685C8cDD9F239f7F7032c"
+      },
+      {
+        "deployedAt": "2026-11-10T14:26:27.688Z",
+        "accountsAddress": "0x0583988901e843DfaB1456C0BDD88E6aAB20c3E1",
+        "auctionsAddress": "0xf819dD6C3B8FB90E5bf82785fFE218De83f9Be7A"
+      },
+      {
+        "deployedAt": "2026-11-12T16:27:52.636Z",
+        "accountsAddress": "0xd990DDA4Ea14e629A8A7CF1592677F24b8e1Fa67",
+        "auctionsAddress": "0x255b9c373b407245293788A6AAf86d891c71D15e"
       }
     ]
   },
@@ -45,23 +55,23 @@
     "rpcUrl": "https://api.avax-test.network/ext/bc/C/rpc",
     "explorer": "https://testnet.snowtrace.io",
     "deployer": "0x8ce4a9D2cc66003a89047fF14BA8F231528fDB16",
-    "deployedAt": "2026-11-10T04:37:17.308Z",
-    "accountsAddress": "0xcf2e105F63275756d9dBB0c8183e113aEA18101E",
-    "auctionsAddress": "0x9549d6EF5b36c83dbA8d77c4D0812164fA5082E1",
+    "deployedAt": "2026-11-12T18:45:58.878Z",
+    "accountsAddress": "0x761A33762092E51f2CdaaF9A34543dD24EFD11D3",
+    "auctionsAddress": "0xA8e64e2568F0088d73209148a4D6462f0b6ED094",
     "transactions": {
       "accounts": {
-        "address": "0xcf2e105F63275756d9dBB0c8183e113aEA18101E",
-        "txHash": "0xdca5b34ab605dbbefe2f7dc25bb81bbb212ccf81e133a4d8a3b94e96707f86be",
-        "blockNumber": 60816532,
+        "address": "0x761A33762092E51f2CdaaF9A34543dD24EFD11D3",
+        "txHash": "0x08fc31ca527cf8e6346e3f30ca1a34a7741f89c8ff1a52e43725084d9e88a168",
+        "blockNumber": 60960933,
         "gasUsed": "1905409",
         "feePaid": "0.00000000030486544"
       },
       "auctions": {
-        "address": "0x9549d6EF5b36c83dbA8d77c4D0812164fA5082E1",
-        "txHash": "0x3a3149b0ce069cf7ce023345a68a3c0e1fb92d631691344d66eacc4ce7ef4fa3",
-        "blockNumber": 60816537,
-        "gasUsed": "4028587",
-        "feePaid": "0.00000000064457392"
+        "address": "0xA8e64e2568F0088d73209148a4D6462f0b6ED094",
+        "txHash": "0x0add5de8d0a3fc8a82a75f867fb640a1ef61fd71d8663922720de8dd22715589",
+        "blockNumber": 60960937,
+        "gasUsed": "4701559",
+        "feePaid": "0.00000000075224944"
       }
     },
     "previous": [
@@ -69,6 +79,16 @@
         "deployedAt": "2026-11-10T03:41:29.454Z",
         "accountsAddress": "0x452a35eC100e4B4FD1E77f8f81B65d628382b0C0",
         "auctionsAddress": "0x7c476B1d85f83e7fE30AED5842be3fF251c9406b"
+      },
+      {
+        "deployedAt": "2026-11-10T04:37:17.308Z",
+        "accountsAddress": "0xcf2e105F63275756d9dBB0c8183e113aEA18101E",
+        "auctionsAddress": "0x9549d6EF5b36c83dbA8d77c4D0812164fA5082E1"
+      },
+      {
+        "deployedAt": "2026-11-12T16:29:29.452Z",
+        "accountsAddress": "0x99c356cFf426D257F09aA4819211E474e488c0fC",
+        "auctionsAddress": "0xB1E17855eEC6D6f83f9548112A694414CF8760f3"
       }
     ]
   },
@@ -79,23 +99,23 @@
     "rpcUrl": "https://polygon-amoy-bor-rpc.publicnode.com",
     "explorer": "https://amoy.polygonscan.com",
     "deployer": "0x5cb5775931f5820e63D28B6d3f403a2120421969",
-    "deployedAt": "2026-11-10T04:40:51.747Z",
-    "accountsAddress": "0x000e505402B9EB8a041746bDd8fFFe9E72cA466e",
-    "auctionsAddress": "0xa7b7d18Aa90e5135a21eF12E0e5389106490b202",
+    "deployedAt": "2026-11-12T19:09:00.086Z",
+    "accountsAddress": "0x6826734bCB9eA591Eb7018f30B8ce2f5a470a1F4",
+    "auctionsAddress": "0xa67993678d19753F8fDa84159887D492e8041BCB",
     "transactions": {
       "accounts": {
-        "address": "0x000e505402B9EB8a041746bDd8fFFe9E72cA466e",
-        "txHash": "0x8409e031ed28cd302f9f1d5c31999deadbcd83b9273a8822482f7ef2d57f16f6",
-        "blockNumber": 52463026,
+        "address": "0x6826734bCB9eA591Eb7018f30B8ce2f5a470a1F4",
+        "txHash": "0xc999ab501a7402671ba3d0c45b26851a43d07b5c55372547f30e960e74f19299",
+        "blockNumber": 52687914,
         "gasUsed": "1922209",
-        "feePaid": "0.057666269996155582"
+        "feePaid": "0.063432897059588479"
       },
       "auctions": {
-        "address": "0xa7b7d18Aa90e5135a21eF12E0e5389106490b202",
-        "txHash": "0x996e2bb0eb4bf8fe970c0a3d6f03cd2bb35954cc40e78fee49ad9d988e4f5db4",
-        "blockNumber": 52463030,
-        "gasUsed": "4031935",
-        "feePaid": "0.12095804999193613"
+        "address": "0xa67993678d19753F8fDa84159887D492e8041BCB",
+        "txHash": "0xdddcbfdd3ef36fb73a9588ddc02656755f8ba461ff6b87e74771774ad7fc0e54",
+        "blockNumber": 52687918,
+        "gasUsed": "4707439",
+        "feePaid": "0.155345487145930609"
       }
     },
     "previous": [
@@ -103,6 +123,11 @@
         "deployedAt": "2026-11-10T03:41:40.131Z",
         "accountsAddress": "0x14b87ef914B81dABdfE25483C4f5a4Bfc5f4018c",
         "auctionsAddress": "0xC9d768e3c0977857746cC67DfD32a26299b3E6FC"
+      },
+      {
+        "deployedAt": "2026-11-10T04:40:51.747Z",
+        "accountsAddress": "0x000e505402B9EB8a041746bDd8fFFe9E72cA466e",
+        "auctionsAddress": "0xa7b7d18Aa90e5135a21eF12E0e5389106490b202"
       }
     ]
   }

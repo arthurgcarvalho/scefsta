@@ -12,7 +12,8 @@
 //     Patients);
 //   * tenders that are auctioned at once and left in progress with a delivery
 //     date weeks away (Tenders In Progress, Incoming Patients);
-//   * tenders that are auctioned and delivered (Accepted Patients).
+//   * tenders that are auctioned and delivered (Accepted Patients);
+//   * a reveal policy suited to a demo (DEMO_POLICY below).
 // In the backend database: a patient record with injury details for every
 // tender, the bid nonces (so the open bids can be revealed from the Dapp
 // later) and the extra users.
@@ -24,9 +25,6 @@ const {
   Wallet,
   Contract,
   NonceManager,
-  solidityPackedKeccak256,
-  randomBytes,
-  toBigInt,
 } = require("ethers");
 const { randomInt } = require("crypto");
 const fs = require("fs");
@@ -36,10 +34,20 @@ const { getNetwork } = require("./networks");
 const { loadAccounts } = require("./accounts");
 const { compile } = require("./compile");
 const { syncDatabase } = require("./sync-db");
+const { sealedBid, nonceToHex } = require("./sealed-bid");
 const { randomAddress, randomSeverity, randomCase, randomProfile } = require("./sample-data");
 
 const DAY = 24 * 60 * 60;
 const HOUR = 60 * 60;
+
+// Reveal policy for a demo deployment: [failed reveals, within seconds,
+// suspension in seconds]. The contract's own default suspends for 30 days,
+// which would lock the two test providers out of a shared demo for a month
+// after three forgotten reveals; here a suspension lasts an hour. Admins can
+// change it on the Admin page.
+const DEMO_POLICY = [3n, BigInt(30 * DAY), BigInt(HOUR)];
+// how long the bids on the long-running open tenders can be revealed
+const OPEN_REVEAL_SECONDS = DAY;
 
 // Tenders that stay open: [days until the auction closes, hours allowed for
 // the delivery, accounts that place a sealed bid]
@@ -102,13 +110,6 @@ async function send(label, contract, method, args = [], overrides = {}, retrySec
       await sleep(3000);
     }
   }
-}
-
-function sealedBid(bid) {
-  // Same scheme as the Dapp: keccak256(abi.encodePacked(uint256(bid + nonce)))
-  const salt = toBigInt(randomBytes(6));
-  const hash = toBigInt(solidityPackedKeccak256(["uint256"], [bid + salt]));
-  return { bid, salt, hash };
 }
 
 async function main() {
@@ -185,14 +186,14 @@ async function main() {
     return [address("facility"), ...others];
   };
   const usedStreets = new Set();
-  const newTender = (auctionSeconds, deliverySeconds) => {
+  const newTender = (auctionSeconds, revealSeconds, deliverySeconds) => {
     let place;
     do {
       place = randomAddress();
     } while (usedStreets.has(place.address));
     usedStreets.add(place.address);
     const maxBid = thousands(120, 400);
-    return { place, auctionSeconds, deliverySeconds, maxBid, penalty: thousands(1, 4) / 2n };
+    return { place, auctionSeconds, revealSeconds, deliverySeconds, maxBid };
   };
   const post = (tender, label) =>
     send(
@@ -200,9 +201,9 @@ async function main() {
       auctions.connect(signers.initiator),
       "postTender",
       [
-        tender.auctionSeconds, tender.deliverySeconds,
+        tender.auctionSeconds, tender.revealSeconds, tender.deliverySeconds,
         tender.place.address, tender.place.city, tender.place.state, tender.place.zipcode,
-        tender.penalty, randomSeverity(), facilitiesFor(),
+        randomSeverity(), facilitiesFor(),
       ],
       { value: tender.maxBid }
     );
@@ -225,15 +226,14 @@ async function main() {
     }
     throw new Error("Could not find the new tenders on chain");
   };
-  const bids = []; // { role, tender, bid, salt, bidId }
+  const bids = []; // { role, tender, bid, nonce, commitment, bidId }
   const placeBid = async (role, tender, amount) => {
-    const sealed = sealedBid(amount);
+    const sealed = sealedBid(tender.id, address(role), amount);
     const receipt = await send(
       `${role} bid on tender ${tender.id}`,
       auctions.connect(signers[role]),
       "secretBid",
-      [tender.id, sealed.hash],
-      { value: tender.penalty }
+      [tender.id, sealed.commitment]
     );
     const placed = receipt.logs
       .map((log) => {
@@ -255,7 +255,7 @@ async function main() {
   console.log("\n2. Tenders that stay open, some with sealed bids");
   let firstId = (await auctions.getAllTenders()).length;
   const open = OPEN_TENDERS.map(([days, hours, bidders]) => ({
-    ...newTender(days * DAY, hours * HOUR),
+    ...newTender(days * DAY, OPEN_REVEAL_SECONDS, hours * HOUR),
     bidders,
   }));
   await Promise.all(open.map((tender) => post(tender, "open tender")));
@@ -268,10 +268,11 @@ async function main() {
 
   console.log("\n3. Tenders auctioned now: bids, reveals, deliveries");
   firstId = (await auctions.getAllTenders()).length;
-  // long enough for the bids to be mined before the auction closes
+  // long enough for the bids, and then the reveals, to be mined in time
   const auctionSeconds = net.name === "sepolia" ? 150 : 75;
+  const revealSeconds = net.name === "sepolia" ? 120 : 75;
   const quick = QUICK_TENDERS.map(([days, winner, delivered]) => ({
-    ...newTender(auctionSeconds, days * DAY),
+    ...newTender(auctionSeconds, revealSeconds, days * DAY),
     winner,
     delivered,
   }));
@@ -295,13 +296,25 @@ async function main() {
         `${entry.role} revealed ${entry.bid} on tender ${entry.tender.id}`,
         auctions.connect(signers[entry.role]),
         "revealBid",
-        [entry.tender.id, entry.bid, entry.salt, entry.bidId],
+        [entry.tender.id, entry.bid, entry.nonce],
         {},
         30
       )
     )
   );
   await waitUntil(Math.max(...quick.map((tender) => tender.revealDate)), "the reveal period to end");
+  await Promise.all(
+    quick.map((tender) =>
+      send(
+        `winner of tender ${tender.id} determined`,
+        auctions.connect(signers.initiator),
+        "determineWinner",
+        [tender.id],
+        {},
+        30
+      )
+    )
+  );
   await Promise.all(
     quick
       .filter((tender) => tender.delivered)
@@ -317,7 +330,24 @@ async function main() {
       )
   );
 
-  console.log("\n4. Backend database");
+  console.log("\n4. Reveal policy for the demo");
+  const policy = await Promise.all([
+    auctions.failedRevealLimit(),
+    auctions.failedRevealWindow(),
+    auctions.suspensionPeriod(),
+  ]);
+  if (policy.every((value, index) => value === DEMO_POLICY[index])) {
+    console.log("  • already set");
+  } else {
+    await send(
+      `${DEMO_POLICY[0]} failed reveals within ${DEMO_POLICY[1] / BigInt(DAY)} days suspend for ${DEMO_POLICY[2] / BigInt(HOUR)} hour(s)`,
+      auctions.connect(signers.admin),
+      "setRevealPolicy",
+      DEMO_POLICY
+    );
+  }
+
+  console.log("\n5. Backend database");
   db.close();
   await syncDatabase(net.name); // a patient record per new tender
   const data = new DatabaseSync(dbFile);
@@ -333,16 +363,15 @@ async function main() {
   }
   // the bid nonces, as the Dapp stores them when a bid is placed through it
   const insertSalt = data.prepare(
-    "INSERT INTO Salts (walletId, patientId, bidId, saltVal, bidVal, penalty) VALUES (?, ?, ?, ?, ?, ?)"
+    "INSERT INTO Salts (walletId, patientId, bidId, saltVal, bidVal) VALUES (?, ?, ?, ?, ?)"
   );
   for (const entry of bids) {
     insertSalt.run(
       address(entry.role),
       entry.tender.id + 1,
       Number(entry.bidId),
-      Number(entry.salt),
-      Number(entry.bid),
-      Number(entry.tender.penalty)
+      nonceToHex(entry.nonce),
+      String(entry.bid)
     );
   }
   data.close();
@@ -350,7 +379,7 @@ async function main() {
     `  ✓ ${blank.length} patient record(s) completed, ${bids.length} bid nonce(s) stored in ${path.basename(dbFile)}`
   );
 
-  const statuses = ["Closed", "InProgress", "Open", "Retracted", "Reclaimed"];
+  const statuses = ["Closed", "InProgress", "Open", "Retracted", "Reclaimed", "Unawarded"];
   const counts = {};
   for (const tender of await auctions.getAllTenders()) {
     const status = statuses[Number(tender.status)];
